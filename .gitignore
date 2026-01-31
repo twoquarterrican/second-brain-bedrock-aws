@@ -1,0 +1,161 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ===== Virtual Environments =====
+venv/
+ENV/
+env/
+.venv
+env.bak/
+venv.bak/
+
+# ===== IDE - VSCode =====
+.vscode/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# ===== IDE - PyCharm =====
+.idea/
+.idea_modules/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+
+# ===== IDE - IntelliJ =====
+.IntelliJIdea*/
+*.iml
+*.iws
+*.ipr
+.idea/
+out/
+
+# ===== IDE - Other =====
+.eclipse/
+.settings/
+.project
+.pydevproject
+.metadata
+*.sublime-workspace
+
+# ===== Testing =====
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+cover/
+
+# ===== Type Checking =====
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# ===== Environment & Secrets =====
+.env
+.env.local
+.env.*.local
+*.local
+.local/
+local/
+
+# ===== AWS =====
+.aws/
+.aws/credentials
+.aws/config
+cdk.out/
+*.cdk.staging/
+*.cdktf.json
+cdktf.out/
+
+# ===== Node (for CDK) =====
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-error.log*
+.npm/
+
+# ===== Bedrock Specific =====
+.bedrock/
+bedrock/cache/
+bedrock/*.local
+*.bedrock.local
+
+# ===== Logging & Temporary =====
+*.log
+*.logs
+*.tmp
+*.temp
+*.bak
+*.backup
+.cache/
+.temp/
+temp/
+
+# ===== OS =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ===== Editor Swap Files =====
+*~
+*.swp
+*.swo
+*.swn
+*#
+
+# ===== macOS =====
+.AppleDouble
+.LSOverride
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ===== Windows =====
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ===== Misc =====
+*.orig
+*.rej
+.env.example.local
+secrets/
+.secrets/

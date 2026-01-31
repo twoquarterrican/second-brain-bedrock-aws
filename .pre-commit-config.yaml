@@ -1,0 +1,103 @@
+# Pre-commit hooks configuration
+# Install: uv run pre-commit install
+# Run manually: uv run pre-commit run --all-files
+
+repos:
+  # Secret detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: ^(\.env\.example|poetry\.lock|package-lock\.json)$
+
+  # Basic file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      - id: check-ast
+      - id: check-case-conflict
+
+  # Python formatting with black
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3
+        args: ['--line-length=100']
+
+  # Python linting with ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.11
+    hooks:
+      - id: ruff
+        args: ['--fix', '--line-length=100']
+      - id: ruff-format
+
+  # YAML formatting
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.11.0
+    hooks:
+      - id: pretty-format-yaml
+        args: ['--autofix', '--indent', '2']
+        exclude: ^node_modules/
+
+  # Sort imports
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ['--profile', 'black', '--line-length', '100']
+
+  # Markdown linting
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.16
+    hooks:
+      - id: mdformat
+        additional_dependencies:
+          - mdformat-gfm
+        args: ['--wrap', '100']
+
+  # Docker (if needed)
+  - repo: https://github.com/hadialqattan/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        exclude: ^(tests/|\.venv/)
+        args: ['--convention=google']
+
+# Configuration
+default_language_version:
+  python: python3.9
+
+# Files to exclude from all hooks
+exclude: |
+  (?x)^(
+    \.venv/|
+    venv/|
+    node_modules/|
+    cdk\.out/|
+    build/|
+    dist/|
+    .*\.egg-info/
+  )
+
+# Minimum Python version
+minimum_pre_commit_version: '2.15.0'
+
+# Fail fast on first error
+fail_fast: false
+
+# Don't update hooks automatically
+autoupdate_commit_msg: 'chore: update pre-commit hooks'

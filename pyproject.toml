@@ -1,0 +1,89 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "second-brain-bedrock"
+version = "0.1.0"
+description = "A second brain powered by AWS Bedrock, DynamoDB, S3, Lambda, and API Gateway"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "boto3>=1.28.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "black>=23.7.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.3.0",
+    "isort>=5.13.0",
+    "detect-secrets>=1.4.0",
+    "mdformat>=0.7.0",
+    "mdformat-gfm>=0.3.0",
+    "pydocstyle>=6.3.0",
+]
+bedrock = [
+    "langchain>=0.0.300",
+    "langchain-aws>=0.0.0",
+    "pypdf>=3.16.0",
+    "python-docx>=0.8.11",
+]
+cdk = [
+    "aws-cdk-lib>=2.100.0",
+    "constructs>=10.0.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.4.0",
+    "black>=23.7.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.3.0",
+    "isort>=5.13.0",
+    "detect-secrets>=1.4.0",
+    "mdformat>=0.7.0",
+    "mdformat-gfm>=0.3.0",
+    "pydocstyle>=6.3.0",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+select = ["E", "F", "W"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+
+[tool.pydocstyle]
+convention = "google"
+ignore = ["D100", "D104"]
+match = "(?!test_).*\\.py"
+
+[tool.mdformat]
+number = false
+wrap = 100
+
+[tool.hatch.build.targets.wheel]
+packages = ["bedrock", "cdk", "scripts"]
