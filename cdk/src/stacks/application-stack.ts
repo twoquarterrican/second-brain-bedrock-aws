@@ -48,8 +48,6 @@ export class ApplicationStack extends cdk.Stack {
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
-      pointInTimeRecovery: true,
-      stream: dynamodb.StreamSpecification.NEW_AND_OLD_IMAGES,
 
       // TODO: Add GSI for type filtering if needed
       // GSI1: { PK: "type", SK: "user_id" } for queries by item type
@@ -149,10 +147,6 @@ export class ApplicationStack extends cdk.Stack {
     // Function URL for Telegram webhook
     this.messageHandlerUrl = this.messageHandlerFunction.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
-      cors: {
-        allowedMethods: [lambda.HttpMethod.POST],
-        allowedOrigins: ['*'],
-      },
     });
 
     new cdk.CfnOutput(this, 'WebhookUrl', {

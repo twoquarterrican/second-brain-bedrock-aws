@@ -4,18 +4,20 @@ This library provides:
 - Pydantic models for all data types (Message, Task, Todo, Reminder)
 - DynamoDB client for CRUD operations
 - Constants and enums for consistent values
+- Structured logging and observability utilities
 """
 
-from .models import Message, Task, Todo, Reminder
-from .dynamodb import DynamoDBClient
 from .constants import (
-    MessageStatus,
-    TaskStatus,
-    TaskPriority,
-    ReminderStatus,
-    ReminderRecurrence,
     ItemType,
+    MessageStatus,
+    ReminderRecurrence,
+    ReminderStatus,
+    TaskPriority,
+    TaskStatus,
 )
+from .dynamodb import DynamoDBClient
+from .models import Message, Reminder, Task, Todo
+from .observability import ObservabilityContext, log_error, log_event, log_metrics, setup_logging
 
 __version__ = "0.1.0"
 
@@ -34,4 +36,10 @@ __all__ = [
     "ReminderStatus",
     "ReminderRecurrence",
     "ItemType",
+    # Observability
+    "setup_logging",
+    "log_event",
+    "log_error",
+    "log_metrics",
+    "ObservabilityContext",
 ]

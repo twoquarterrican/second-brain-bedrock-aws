@@ -24,13 +24,16 @@ import json
 import os
 import uuid
 from datetime import datetime
+
 import boto3
-import sys
-
-# Add shared library to path
-sys.path.insert(0, '/opt/python')
-
-from second_brain_core import Message, DynamoDBClient, MessageStatus
+from second_brain_core import (
+    DynamoDBClient,
+    Message,
+    MessageStatus,
+    log_error,
+    log_event,
+    setup_logging,
+)
 
 
 def save_raw_event_to_s3(user_id: str, message_id: str, raw_message: dict) -> str:
@@ -45,8 +48,8 @@ def save_raw_event_to_s3(user_id: str, message_id: str, raw_message: dict) -> st
     Returns:
         S3 key for the saved message
     """
-    s3_client = boto3.client('s3')
-    bucket_name = os.getenv('S3_BUCKET_NAME')
+    s3_client = boto3.client("s3")
+    bucket_name = os.getenv("S3_BUCKET_NAME")
 
     # Create S3 key: raw-events/user_id/YYYY/MM/DD/message_id.json
     now = datetime.utcnow()
@@ -61,8 +64,8 @@ def save_raw_event_to_s3(user_id: str, message_id: str, raw_message: dict) -> st
         Bucket=bucket_name,
         Key=s3_key,
         Body=json.dumps(raw_message),
-        ContentType='application/json',
-        ServerSideEncryption='AES256',
+        ContentType="application/json",
+        ServerSideEncryption="AES256",
     )
 
     return s3_key
@@ -76,15 +79,15 @@ def queue_message_for_processing(message_id: str, user_id: str) -> None:
         message_id: Message to process
         user_id: User who sent message
     """
-    sqs_client = boto3.client('sqs')
-    queue_url = os.getenv('MESSAGE_QUEUE_URL')
+    sqs_client = boto3.client("sqs")
+    queue_url = os.getenv("MESSAGE_QUEUE_URL")
 
     if not queue_url:
-        raise ValueError('MESSAGE_QUEUE_URL environment variable not set')
+        raise ValueError("MESSAGE_QUEUE_URL environment variable not set")
 
     sqs_client.send_message(
         QueueUrl=queue_url,
-        MessageBody=json.dumps({'user_id': user_id, 'message_id': message_id}),
+        MessageBody=json.dumps({"user_id": user_id, "message_id": message_id}),
     )
 
 
@@ -99,26 +102,29 @@ def lambda_handler(event, context):
     Returns:
         API Gateway Lambda proxy integration response
     """
+    # Setup structured logging
+    setup_logging()
+
     try:
         # Parse webhook payload
-        body = json.loads(event.get('body', '{}'))
-        telegram_message = body.get('message', {})
+        body = json.loads(event.get("body", "{}"))
+        telegram_message = body.get("message", {})
 
         if not telegram_message:
             return {
-                'statusCode': 400,
-                'body': json.dumps({'error': 'No message in payload'}),
+                "statusCode": 400,
+                "body": json.dumps({"error": "No message in payload"}),
             }
 
         # Extract message details
-        telegram_message_id = telegram_message.get('message_id')
-        chat_id = telegram_message.get('chat', {}).get('id')
-        raw_text = telegram_message.get('text', '')
+        telegram_message_id = telegram_message.get("message_id")
+        chat_id = telegram_message.get("chat", {}).get("id")
+        raw_text = telegram_message.get("text", "")
 
         if not raw_text:
             return {
-                'statusCode': 400,
-                'body': json.dumps({'error': 'No text in message'}),
+                "statusCode": 400,
+                "body": json.dumps({"error": "No text in message"}),
             }
 
         # Use chat_id as user_id for single-user setup
@@ -151,35 +157,33 @@ def lambda_handler(event, context):
         queue_message_for_processing(message_id, user_id)
 
         # 5. Log observability event
-        print(json.dumps({
-            'observability': 'message_received',
-            'timestamp': datetime.utcnow().isoformat(),
-            'user_id': user_id,
-            'message_id': message_id,
-            's3_key': s3_key,
-        }), file=sys.stderr)
+        log_event(
+            "message_received",
+            {
+                "user_id": user_id,
+                "message_id": message_id,
+                "s3_key": s3_key,
+                "raw_length": len(raw_text),
+            },
+        )
 
         # 6. Return success immediately
         return {
-            'statusCode': 200,
-            'body': json.dumps({
-                'status': 'received',
-                'message_id': message_id,
-                'user_id': user_id,
-            }),
+            "statusCode": 200,
+            "body": json.dumps(
+                {
+                    "status": "received",
+                    "message_id": message_id,
+                    "user_id": user_id,
+                }
+            ),
         }
 
     except Exception as e:
-        print(f'Error in message handler: {e}', file=sys.stderr)
-
         # Log error event
-        print(json.dumps({
-            'observability': 'message_handler_error',
-            'timestamp': datetime.utcnow().isoformat(),
-            'error': str(e),
-        }), file=sys.stderr)
+        log_error("message_handler_error", e)
 
         return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)}),
+            "statusCode": 500,
+            "body": json.dumps({"error": str(e)}),
         }
