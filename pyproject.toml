@@ -7,7 +7,7 @@ name = "second-brain-bedrock"
 version = "0.1.0"
 description = "A second brain powered by AWS Bedrock, DynamoDB, S3, Lambda, and API Gateway"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "boto3>=1.28.0",
     "python-dotenv>=1.0.0",
@@ -25,16 +25,15 @@ dev = [
     "mdformat>=0.7.0",
     "mdformat-gfm>=0.3.0",
     "pydocstyle>=6.3.0",
+    "bedrock-agentcore",
+    "strands-agents",
+    "bedrock-agentcore-starter-toolkit",
 ]
 bedrock = [
     "langchain>=0.0.300",
     "langchain-aws>=0.0.0",
     "pypdf>=3.16.0",
     "python-docx>=0.8.11",
-]
-cdk = [
-    "aws-cdk-lib>=2.100.0",
-    "constructs>=10.0.0",
 ]
 
 [tool.black]
@@ -72,4 +71,4 @@ number = false
 wrap = 100
 
 [tool.hatch.build.targets.wheel]
-packages = ["bedrock", "cdk", "scripts"]
+packages = ["bedrock", "scripts"]

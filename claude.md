@@ -8,107 +8,154 @@ This is the **Second Brain** project - a distributed knowledge management system
 
 ```
 second-brain-bedrock-aws/
-├── bedrock/              # Bedrock LLM applications
-│   ├── agents.md        # Agent definitions
-│   ├── __init__.py
-│   └── app.py
-├── cdk/                 # AWS CDK infrastructure
-│   ├── __init__.py
-│   └── app.py
-├── scripts/             # Deployment and utility scripts
+├── bedrock/                    # Bedrock agent applications
+│   ├── src/                   # Agent runtime code
+│   │   ├── main.py           # Agent entry point
+│   │   ├── mcp_client/       # MCP client for tools
+│   │   └── model/            # Agent models
+│   ├── cdk/                   # AgentCore infrastructure (TypeScript)
+│   │   ├── bin/
+│   │   ├── lib/
+│   │   └── package.json
+│   ├── mcp/                   # MCP tools (Lambda functions)
+│   ├── test/                  # Agent tests
+│   └── pyproject.toml
+├── cdk/                       # Root shared infrastructure (TypeScript)
+│   ├── src/
+│   │   ├── stacks/           # DynamoDB, S3, etc.
+│   │   └── index.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── cdk.json
+├── scripts/                   # Python utility scripts
 │   ├── deploy.py
 │   └── utils.py
-├── tests/               # Test suite
-├── pyproject.toml       # Project configuration
-├── README.md            # Project documentation
-└── claude.md            # This file
+├── tests/                     # Python tests
+├── pyproject.toml             # Root Python configuration
+├── README.md                  # Project documentation
+└── claude.md                  # This file
 ```
 
 ## Technology Stack
 
-- **Python 3.9+** with `uv` package manager
-- **AWS Services**: Bedrock, DynamoDB, S3, Lambda, API Gateway, CloudWatch, X-Ray
-- **LLM**: Claude (via Bedrock)
-- **Infrastructure**: AWS CDK
-- **Testing**: pytest
-- **Code Quality**: black, ruff, mypy
+- **Python 3.10+** with `uv` package manager (for Bedrock agent)
+- **Node.js 18+** with npm (for TypeScript CDK)
+- **TypeScript** - CDK infrastructure as code
+- **AWS Services**: Bedrock, DynamoDB, S3, Lambda, API Gateway, AgentCore, CloudWatch, X-Ray
+- **LLM**: Claude (via Bedrock AgentCore)
+- **Testing**: pytest (Python), Jest (TypeScript)
+- **Code Quality**: black, ruff, mypy (Python)
 
 ## Development Workflow
 
 ### Setup
 
 ```bash
-uv sync --with bedrock --with cdk --with dev
+# Python dependencies
+uv sync --with bedrock --with dev
+
+# CDK dependencies
+cd cdk && npm install && cd ..
 ```
 
 ### Common Commands
 
+#### Python
+
 ```bash
-# Run scripts
+# Run Python scripts
 uv run scripts/deploy.py
 
-# Run tests
+# Run Python tests
 uv run pytest tests/ -v
 
-# Format code
+# Format Python code
 uv run black .
 
-# Lint code
+# Lint Python code
 uv run ruff check . --fix
 
-# Type check
-uv run mypy bedrock/ cdk/ scripts/
+# Type check Python code
+uv run mypy bedrock/ scripts/
+```
+
+#### TypeScript CDK
+
+```bash
+cd cdk
+
+# Build
+npm run build
+
+# Watch mode
+npm run watch
+
+# Synthesize CloudFormation
+npm run cdk:synth
 
 # Deploy infrastructure
-uv run cdk deploy
+npm run cdk:deploy
+
+# Preview changes
+npm run cdk:diff
+
+# Destroy stacks
+npm run cdk:destroy
 ```
 
 ## Module Responsibilities
 
 ### bedrock/
 
-- LLM integrations using Bedrock Claude
-- Agent definitions for autonomous workflows
-- Embedding generation
-- Model invocation wrappers
+**AgentCore deployment** - Production-ready Bedrock agent application
 
-**Key Files**:
-- `app.py` - Main Bedrock application class
-- `agents.md` - Agent architecture documentation
+**Key Directories**:
+- `src/` - Agent runtime code (Python)
+- `cdk/` - AgentCore infrastructure (TypeScript)
+- `mcp/` - MCP tools for agent capabilities
+- `test/` - Agent tests
 
 ### cdk/
 
-- Infrastructure as Code for AWS services
-- Stack definitions for DynamoDB, S3, Lambda, API Gateway
-- IAM roles and policies
-- Environment-specific configurations
+**Shared infrastructure** - Root CDK for DynamoDB, S3, and other shared AWS resources
 
-**Key Files**:
-- `app.py` - CDK app entry point with stack definitions
+**Key Directories**:
+- `src/stacks/` - CDK stack definitions (TypeScript)
+  - `database-stack.ts` - DynamoDB tables
+  - `storage-stack.ts` - S3 buckets
+- `src/index.ts` - CDK app entry point
+
+**Integration**: AgentCore can reference outputs from root CDK stacks via cross-stack references.
 
 ### scripts/
 
-- Deployment automation
-- Utility functions for AWS service interactions
-- Database migrations
-- Data processing scripts
+**Python utilities** - Deployment and operational scripts
 
 **Key Files**:
 - `deploy.py` - Deployment orchestration
-- `utils.py` - Common AWS client helpers
+- `utils.py` - AWS client helpers
 
 ## Dependency Management
 
-Using `uv` with dependency groups:
+### Python (`uv`)
 
-- **dev**: Testing, linting, formatting tools
-- **bedrock**: Bedrock-specific libraries (langchain, document processing)
-- **cdk**: AWS CDK libraries
+Dependency groups for Python isolation:
+
+- **dev**: Development tools (pytest, black, ruff, mypy, pre-commit, bedrock-agentcore, strands-agents)
+- **bedrock**: Bedrock/LangChain libraries
 
 Install specific groups:
 ```bash
-uv sync --with bedrock --with cdk --with dev
+uv sync --with bedrock --with dev
 ```
+
+### TypeScript (npm)
+
+Node.js dependencies in `cdk/package.json`:
+
+- `aws-cdk-lib` - AWS CDK library
+- `constructs` - CDK constructs framework
+- `typescript` - TypeScript compiler
 
 ## Code Standards
 

@@ -1,0 +1,16 @@
+default_agent: second_brain_agent
+is_agentcore_create_with_iac: true
+agents:
+  second_brain_agent:
+    name: second_brain_agent
+    entrypoint: /home/jt/GitHub/second-brain/second-brain-bedrock-aws/bedrock/temp/src/main.py
+    deployment_type: container
+    source_path: /home/jt/GitHub/second-brain/second-brain-bedrock-aws/bedrock/temp/src
+    aws:
+      account: null
+      region: null
+    bedrock_agentcore:
+      agent_id: null
+      agent_arn: null
+      agent_session_id: null
+    is_generated_by_agentcore_create: true

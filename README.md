@@ -25,38 +25,54 @@ This project implements a "second brain" - a personal knowledge management syste
 
 ```
 .
-├── bedrock/          # AWS Bedrock applications and deployments
-│   ├── agents/       # Agentic workflows and autonomous tasks
-│   ├── models/       # Custom model integrations and LLM configurations
-│   └── app.py        # Main Bedrock application
-├── cdk/              # AWS CDK infrastructure as code
-│   ├── stacks/       # CDK stack definitions
-│   └── app.py        # CDK app entrypoint
-├── scripts/          # Utility scripts for deployment and maintenance
-│   ├── deploy.py     # Deployment automation
-│   └── utils.py      # Common utilities
-├── tests/            # Test suite
-├── pyproject.toml    # Project configuration and dependencies
-└── README.md         # This file
+├── bedrock/              # AWS Bedrock applications and deployments
+│   ├── src/             # Bedrock agent runtime code
+│   ├── cdk/             # CDK for AgentCore infrastructure (TypeScript)
+│   ├── mcp/             # MCP tools for agent capabilities
+│   └── main.py          # Agent entry point
+├── cdk/                  # Root AWS CDK infrastructure (TypeScript)
+│   ├── src/
+│   │   ├── stacks/      # CDK stack definitions
+│   │   └── index.ts     # CDK app entry point
+│   ├── package.json     # Node.js dependencies
+│   └── tsconfig.json    # TypeScript configuration
+├── scripts/              # Python utility scripts
+│   ├── deploy.py        # Deployment automation
+│   └── utils.py         # AWS client helpers
+├── tests/                # Python test suite
+├── pyproject.toml        # Python project configuration
+└── README.md             # This file
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.10+ (for Bedrock/AgentCore)
+- Node.js 18+ (for CDK) - [nvm](https://github.com/nvm-sh/nvm) recommended
 - `uv` package manager
 - AWS Account with appropriate permissions
 - AWS CLI configured
 
 ### Installation
 
+#### Python Dependencies
+
 ```bash
-# Install dependencies using uv
+# Install Python dependencies
 uv sync
 
 # Install with specific dependency groups
-uv sync --with bedrock --with cdk --with dev
+uv sync --with bedrock --with dev
+```
+
+#### CDK Dependencies
+
+```bash
+# Install CDK dependencies
+cd cdk
+npm install
+cd ..
 ```
 
 ### Configuration
@@ -72,7 +88,9 @@ S3_BUCKET_NAME=second-brain-vectors
 
 ### Running Scripts
 
-All scripts are run using `uv run`:
+#### Python Scripts
+
+All Python scripts are run using `uv run`:
 
 ```bash
 # Deploy infrastructure
@@ -88,18 +106,44 @@ uv run black .
 uv run ruff check .
 ```
 
-## Dependency Groups
+#### CDK Commands
 
-The project uses `uv` dependency groups for isolation:
+```bash
+cd cdk
 
-- **dev** - Development tools (pytest, black, ruff, mypy)
-- **bedrock** - Bedrock-specific libraries (langchain, document processors)
-- **cdk** - AWS CDK libraries for infrastructure
+# Build TypeScript
+npm run build
+
+# Watch mode (rebuild on changes)
+npm run watch
+
+# Synthesize CloudFormation
+npm run cdk:synth
+
+# Deploy all stacks
+npm run cdk:deploy
+
+# Deploy specific stack
+npm run cdk:deploy DatabaseStack
+
+# Preview changes
+npm run cdk:diff
+
+# Destroy stacks
+npm run cdk:destroy
+```
+
+## Python Dependency Groups
+
+The project uses `uv` dependency groups for Python isolation:
+
+- **dev** - Development tools (pytest, black, ruff, mypy, pre-commit, bedrock-agentcore)
+- **bedrock** - Bedrock/LangChain libraries (langchain, document processors)
 
 Install specific groups:
 
 ```bash
-uv sync --with bedrock --with cdk --with dev
+uv sync --with bedrock --with dev
 ```
 
 ## Architecture
