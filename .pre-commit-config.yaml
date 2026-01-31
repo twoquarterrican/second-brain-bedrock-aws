@@ -98,6 +98,3 @@ minimum_pre_commit_version: '2.15.0'
 
 # Fail fast on first error
 fail_fast: false
-
-# Don't update hooks automatically
-autoupdate_commit_msg: 'chore: update pre-commit hooks'
