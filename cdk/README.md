@@ -7,11 +7,20 @@ TypeScript AWS CDK infrastructure as code for the Second Brain application.
 ```
 src/
 ├── stacks/
-│   ├── database-stack.ts   # DynamoDB tables for knowledge base
-│   └── storage-stack.ts    # S3 buckets for vectors and documents
-└── index.ts                # CDK App entry point
+│   ├── application-stack.ts   # Single stack with all resources
+│   └── index.ts               # Stack exports
+└── index.ts                   # CDK App entry point
 
-lib/                         # Compiled JavaScript (generated)
+lambda/
+├── message_handler/           # Telegram webhook Lambda
+│   ├── index.py
+│   └── requirements.txt
+├── processor/                 # Async message processor Lambda
+│   ├── index.py
+│   └── requirements.txt
+└── README.md                  # Lambda documentation
+
+lib/                           # Compiled JavaScript (generated)
 ```
 
 ## Setup
@@ -55,13 +64,6 @@ npm run cdk:synth
 npm run cdk:deploy
 ```
 
-### Deploy Specific Stack
-
-```bash
-npm run cdk:deploy DatabaseStack
-npm run cdk:deploy StorageStack
-```
-
 ### Preview Changes
 
 ```bash
@@ -76,32 +78,79 @@ npm run cdk:destroy
 
 ## Stacks
 
-### DatabaseStack
+### ApplicationStack
 
-Creates a DynamoDB table for the knowledge base with:
-- Partition key: `id` (string)
-- Sort key: `created_at` (string)
-- Global secondary index on `user_id`
-- Point-in-time recovery enabled
-- Streams enabled for change data capture
+Single stack containing all core infrastructure:
+
+**Data Layer**:
+- DynamoDB table: `second-brain`
+  - Partition key: `PK` (e.g., `user#<user_id>`)
+  - Sort key: `SK` (type-specific, e.g., `task#<id>`, `message#<timestamp>#<id>`)
+  - Point-in-time recovery enabled
+  - Streams enabled for CDC
+  - Pay-per-request billing
+
+- S3 bucket: `second-brain-data`
+  - Prefixes: `raw-events/`, `vector-embeddings/`, `backups/`
+  - Versioning enabled
+  - Server-side encryption
+  - Intelligent-Tiering after 30 days
+  - Public access blocked
+
+**API Layer**:
+- Lambda Function URL for Telegram webhook (message handler)
+  - Entry point for incoming messages
+  - Saves raw to S3, metadata to DynamoDB
+  - Returns 200 OK immediately
+
+**Async Processing Layer**:
+- SQS Queue: `second-brain-messages`
+  - Decouples webhook from processing
+  - Enables retries and batching
+
+- Processing Lambda
+  - Triggered by SQS messages
+  - Invokes Bedrock agent
+  - Creates tasks/reminders in DynamoDB
+
+**IAM Roles & Policies**:
+- Message handler role: DynamoDB write, S3 write (raw-events), SQS send
+- Processing role: DynamoDB read/write, S3 read (raw-events), SQS consume, Lambda invoke
 
 **Outputs**:
-- `SecondBrainKnowledgeTableName` - Table name
-- `SecondBrainKnowledgeTableArn` - Table ARN
+- `SecondBrainDataTableName` - Main data table
+- `SecondBrainDataBucketName` - Data storage bucket
+- `SecondBrainMessageQueueUrl` - Processing queue
+- `SecondBrainWebhookUrl` - Telegram webhook URL
 
-### StorageStack
+## Lambda Functions
 
-Creates an S3 bucket for vectors and documents with:
-- Versioning enabled
-- Public access blocked
-- Server-side encryption enabled
-- SSL enforcement enabled
-- Lifecycle rules (Intelligent-Tiering after 30 days)
-- Auto-deletion on stack removal
+Lambda code in `lambda/` directory:
 
-**Outputs**:
-- `SecondBrainVectorBucketName` - Bucket name
-- `SecondBrainVectorBucketArn` - Bucket ARN
+### message_handler/
+- Entry point for Telegram webhook
+- Saves raw messages to S3 (immutable)
+- Stores metadata in DynamoDB
+- Queues for async processing
+- Returns 200 immediately
+
+### processor/
+- Triggered by SQS messages
+- Gets message from DynamoDB
+- Invokes Bedrock agent
+- Creates tasks/reminders/todos
+- Queues response for delivery
+
+**See `lambda/README.md` for details and TODOs.**
+
+## Shared Library Integration
+
+Both Lambdas use `second_brain_core` from `/lib/python/`:
+```python
+from second_brain_core import Message, Task, DynamoDBClient
+```
+
+The CDK stack packages this as a Lambda layer (TODO: explicit layer configuration).
 
 ## Integration with AgentCore
 
@@ -109,17 +158,43 @@ The `bedrock/cdk` contains the AgentCore runtime infrastructure. To reference re
 
 ```typescript
 // In bedrock/cdk/lib/stacks/agentcore-stack.ts
-const knowledgeTableName = cdk.Fn.importValue('SecondBrainKnowledgeTableName');
-const knowledgeTable = dynamodb.Table.fromTableName(
+const dataTableName = cdk.Fn.importValue('SecondBrainDataTableName');
+const dataTable = dynamodb.Table.fromTableName(
   this,
-  'KnowledgeTable',
-  knowledgeTableName
+  'DataTable',
+  dataTableName
 );
+```
+
+## Environment Variables
+
+Lambda functions receive these from CDK:
+```
+DYNAMODB_TABLE_NAME=second-brain
+S3_BUCKET_NAME=second-brain-data
+MESSAGE_QUEUE_URL=<SQS queue URL>
+BEDROCK_AGENT_FUNCTION_NAME=bedrock-agent-runtime
+AWS_REGION=<region>
 ```
 
 ## Notes
 
-- Stacks use `PAY_PER_REQUEST` billing for DynamoDB (suitable for variable workloads)
-- S3 uses on-demand storage with Intelligent-Tiering for cost optimization
-- All exports use consistent naming: `SecondBrain<Resource><Type>`
-- Python CDK stubs were replaced with TypeScript for consistency with AgentCore
+- Single ApplicationStack for simplicity and unified resource management
+- DynamoDB uses `PAY_PER_REQUEST` billing (suitable for variable workloads)
+- S3 uses Intelligent-Tiering for cost optimization
+- All exports use consistent naming: `SecondBrain<Resource>`
+- TypeScript CDK for consistency with AgentCore and AWS best practices
+- Python Lambda code for agent and data integration
+- Structured logging with `observability` field for CloudWatch Logs Insights
+
+## TODOs
+
+See comments in `application-stack.ts` and `lambda/README.md` for implementation gaps:
+
+- [ ] Lambda layers for dependencies
+- [ ] Bedrock agent Lambda invocation permissions
+- [ ] Response queue and handler Lambda
+- [ ] CloudWatch Logs Insights dashboard
+- [ ] Custom metrics and alarms
+- [ ] Telegram message validation
+- [ ] Error handling and retry logic

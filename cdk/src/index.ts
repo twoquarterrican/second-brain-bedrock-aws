@@ -1,14 +1,23 @@
 import * as cdk from 'aws-cdk-lib';
-import { DatabaseStack } from './stacks/database-stack';
-import { StorageStack } from './stacks/storage-stack';
+import { ApplicationStack } from './stacks/application-stack';
 
 /**
  * Second Brain CDK Application
  *
  * This app defines the core infrastructure for the Second Brain system:
- * - DynamoDB for knowledge base metadata and relationships
- * - S3 for document and vector storage
- * - Additional stacks can be added for AgentCore, Lambda, API Gateway, etc.
+ * - Single ApplicationStack containing all resources:
+ *   - DynamoDB table (second-brain) for all data types
+ *   - S3 bucket (second-brain-data) with prefixes
+ *   - SQS Queue for async message processing
+ *   - Lambda Function URL for Telegram webhook
+ *   - Processing Lambda for async workflow
+ *   - IAM roles with least privilege
+ *
+ * Separate stack:
+ * - bedrock/cdk contains AgentCore runtime (self-contained)
+ *
+ * Shared library:
+ * - /lib/python/second_brain_core used by both stacks
  */
 class SecondBrainApp extends cdk.App {
   constructor() {
@@ -19,15 +28,10 @@ class SecondBrainApp extends cdk.App {
       region: process.env.CDK_DEFAULT_REGION,
     };
 
-    // Create shared infrastructure stacks
-    new DatabaseStack(this, 'DatabaseStack', {
+    // Create main application infrastructure
+    new ApplicationStack(this, 'ApplicationStack', {
       env,
-      description: 'DynamoDB tables for Second Brain knowledge base',
-    });
-
-    new StorageStack(this, 'StorageStack', {
-      env,
-      description: 'S3 buckets for Second Brain vector and document storage',
+      description: 'Second Brain main infrastructure: DynamoDB, S3, Lambdas, SQS',
     });
   }
 }
