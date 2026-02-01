@@ -82,7 +82,7 @@ class SecondBrainDeployer:
 
     def synth_stack(self) -> bool:
         """Synthesize CDK stack to CloudFormation template."""
-        # Get AWS account ID
+        # Get AWS account ID and set in environment for CDK
         try:
             account = self.get_aws_account()
         except RuntimeError as e:
@@ -91,9 +91,8 @@ class SecondBrainDeployer:
 
         click.echo(click.style(f"   AWS Account: {account}", dim=True))
 
-        # Set up environment with CDK_DEFAULT_ACCOUNT
-        env = os.environ.copy()
-        env["CDK_DEFAULT_ACCOUNT"] = account
+        # Set CDK_DEFAULT_ACCOUNT in current environment so subprocess inherits it
+        os.environ["CDK_DEFAULT_ACCOUNT"] = account
 
         cmd = [
             "cdk",
@@ -113,13 +112,12 @@ class SecondBrainDeployer:
             cmd,
             cwd=self.cdk_dir,
             description="🔨 Synthesizing CloudFormation template...",
-            env=env,
         )
         return result.returncode == 0
 
     def deploy_stack(self) -> bool:
         """Deploy CDK stack to AWS."""
-        # Get AWS account ID
+        # Get AWS account ID and set in environment for CDK
         try:
             account = self.get_aws_account()
         except RuntimeError as e:
@@ -128,9 +126,8 @@ class SecondBrainDeployer:
 
         click.echo(click.style(f"   AWS Account: {account}", dim=True))
 
-        # Set up environment with CDK_DEFAULT_ACCOUNT
-        env = os.environ.copy()
-        env["CDK_DEFAULT_ACCOUNT"] = account
+        # Set CDK_DEFAULT_ACCOUNT in current environment so subprocess inherits it
+        os.environ["CDK_DEFAULT_ACCOUNT"] = account
 
         cmd = [
             "npx",
@@ -154,7 +151,6 @@ class SecondBrainDeployer:
             cmd,
             cwd=self.cdk_dir,
             description="🚀 Deploying Second Brain to AWS...",
-            env=env,
         )
         return result.returncode == 0
 
