@@ -46,10 +46,10 @@ export class LambdaLayer extends Construct {
               'mkdir -p /asset-output/python',
               // Install uv package manager
               'pip install uv',
-              // Install lambda package and all dependencies from pyproject.toml
+              // Install sb_shared in container environment so uv can resolve it as a dependency
+              'pip install /packages/shared',
+              // Install lambda package and all dependencies from pyproject.toml into the layer
               'cd /packages/lambda && uv pip install --target /asset-output/python .',
-              // Copy editable dependencies (sb_shared)
-              'cp -r /packages/shared/src/sb_shared /asset-output/python/',
             ].join(' && '),
           ],
           user: 'root',
