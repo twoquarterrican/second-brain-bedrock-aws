@@ -44,10 +44,10 @@ export class LambdaLayer extends Construct {
             [
               // Create the proper layer structure
               'mkdir -p /asset-output/python',
-              // Install dependencies from lambda pyproject.toml
-              'cd /packages/lambda && pip install . --target /asset-output/python --no-deps',
-              // Install external dependencies
-              'pip install boto3 pydantic aws-lambda-logging requests --target /asset-output/python',
+              // Install uv package manager
+              'pip install uv',
+              // Install lambda package and all dependencies from pyproject.toml
+              'cd /packages/lambda && uv pip install --target /asset-output/python .',
               // Copy editable dependencies (sb_shared)
               'cp -r /packages/shared/src/sb_shared /asset-output/python/',
             ].join(' && '),
