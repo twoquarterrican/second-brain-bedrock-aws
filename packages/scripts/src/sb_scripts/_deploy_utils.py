@@ -1,5 +1,6 @@
 """Shared deployment utilities for Second Brain."""
 
+import os
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -68,7 +69,7 @@ def run_command(
         cwd: Working directory
         capture_output: Whether to capture output
         description: Description for user display
-        env: Environment variables dict (merged with current env if provided)
+        env: Environment variables dict (if provided, replaces current env)
 
     Returns:
         CompletedProcess result
@@ -80,12 +81,16 @@ def run_command(
     cmd_str = " ".join(cmd)
     click.echo(click.style(f"\n   Command: {cmd_str}", dim=True))
 
+    # If env dict provided, use it directly (already has all vars needed)
+    # Otherwise use current environment
+    run_env = env if env is not None else os.environ.copy()
+
     result = subprocess.run(
         cmd,
         cwd=cwd,
         capture_output=capture_output,
         text=True,
-        env=env,
+        env=run_env,
     )
 
     if description:
