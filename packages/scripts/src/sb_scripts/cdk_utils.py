@@ -70,3 +70,18 @@ def find_packages_directory() -> Path:
 
     # Return as POSIX path for cross-platform compatibility
     return packages_dir.resolve()
+
+
+def find_project_root_for_context() -> Path:
+    """Get project root for CDK context variable.
+
+    Returns:
+        Absolute POSIX path to project root
+
+    Raises:
+        RuntimeError: If project root cannot be found
+    """
+    project_root = find_project_root()
+    if not project_root.exists():
+        raise RuntimeError(f"Project root not found at {project_root}.")
+    return project_root.resolve()

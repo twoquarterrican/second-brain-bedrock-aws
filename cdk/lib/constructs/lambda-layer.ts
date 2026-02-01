@@ -14,15 +14,15 @@ export class LambdaLayer extends Construct {
   constructor(scope: Construct, id: string, props: Props) {
     super(scope, id);
 
-    // Get packages directory from context
-    const packagesDir = this.node.tryGetContext('PackagesDirectoryPath');
-    if (!packagesDir || !fs.existsSync(packagesDir)) {
+    // Get project root from context to access workspace configuration
+    const projectRoot = this.node.tryGetContext('ProjectRootPath');
+    if (!projectRoot || !fs.existsSync(projectRoot)) {
       throw new Error(
-        `PackagesDirectoryPath context variable not set or invalid: ${packagesDir}`
+        `ProjectRootPath context variable not set or invalid: ${projectRoot}`
       );
     }
 
-    const lambdaDir = path.join(packagesDir, 'lambda');
+    const lambdaDir = path.join(projectRoot, 'packages', 'lambda');
     if (!fs.existsSync(lambdaDir)) {
       throw new Error(`Lambda directory not found at ${lambdaDir}`);
     }
@@ -34,8 +34,8 @@ export class LambdaLayer extends Construct {
           image: lambda.Runtime.PYTHON_3_13.bundlingImage,
           volumes: [
             {
-              hostPath: packagesDir,
-              containerPath: '/packages',
+              hostPath: projectRoot,
+              containerPath: '/project',
             },
           ],
           command: [
@@ -46,10 +46,9 @@ export class LambdaLayer extends Construct {
               'mkdir -p /asset-output/python',
               // Install uv package manager
               'pip install uv',
-              // Install sb_shared in container environment so uv can resolve it as a dependency
-              'pip install /packages/shared',
               // Install lambda package and all dependencies from pyproject.toml into the layer
-              'cd /packages/lambda && uv pip install --target /asset-output/python .',
+              // Run from project root so uv sees the workspace configuration
+              'cd /project && uv pip install --target /asset-output/python ./packages/lambda',
             ].join(' && '),
           ],
           user: 'root',

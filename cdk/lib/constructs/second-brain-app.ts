@@ -114,15 +114,15 @@ export class SecondBrainApp extends Construct {
       appName: 'second-brain',
     });
 
-    // Get packages directory from context for unified code asset
-    const packagesDir = this.node.tryGetContext('PackagesDirectoryPath');
-    if (!packagesDir || !fs.existsSync(packagesDir)) {
+    // Get project root from context for unified code asset
+    const projectRoot = this.node.tryGetContext('ProjectRootPath');
+    if (!projectRoot || !fs.existsSync(projectRoot)) {
       throw new Error(
-        `PackagesDirectoryPath context variable not set or invalid: ${packagesDir}`
+        `ProjectRootPath context variable not set or invalid: ${projectRoot}`
       );
     }
 
-    const lambdaDir = path.join(packagesDir, 'lambda');
+    const lambdaDir = path.join(projectRoot, 'packages', 'lambda');
     if (!fs.existsSync(lambdaDir)) {
       throw new Error(`Lambda directory not found at ${lambdaDir}`);
     }

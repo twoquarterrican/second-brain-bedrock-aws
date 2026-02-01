@@ -8,7 +8,12 @@ from dotenv import load_dotenv
 from InquirerPy import inquirer
 
 from ._deploy_utils import check_tools, run_command, show_install_instructions
-from .cdk_utils import find_bedrock_dockerfile_parent, find_packages_directory, find_project_root
+from .cdk_utils import (
+    find_bedrock_dockerfile_parent,
+    find_packages_directory,
+    find_project_root,
+    find_project_root_for_context,
+)
 
 load_dotenv()
 
@@ -29,6 +34,7 @@ class SecondBrainDeployer:
         self.cdk_dir = self.project_root / "cdk"
         self.bedrock_docker_path = find_bedrock_dockerfile_parent()
         self.packages_dir = find_packages_directory()
+        self.project_root_for_context = find_project_root_for_context()
 
         self.tools_info = {
             "npm": "https://nodejs.org",
@@ -61,6 +67,8 @@ class SecondBrainDeployer:
             "--region",
             self.region,
             "--context",
+            f"ProjectRootPath={self.project_root_for_context.as_posix()}",
+            "--context",
             f"BedrockDockerfileParentPath={self.bedrock_docker_path.as_posix()}",
             "--context",
             f"PackagesDirectoryPath={self.packages_dir.as_posix()}",
@@ -80,6 +88,8 @@ class SecondBrainDeployer:
             "deploy",
             "--region",
             self.region,
+            "--context",
+            f"ProjectRootPath={self.project_root_for_context.as_posix()}",
             "--context",
             f"BedrockDockerfileParentPath={self.bedrock_docker_path.as_posix()}",
             "--context",
