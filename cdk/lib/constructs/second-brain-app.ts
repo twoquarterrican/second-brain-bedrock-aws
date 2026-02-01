@@ -7,6 +7,8 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import * as path from 'path';
+import * as fs from 'node:fs';
+import { LambdaLayer } from './lambda-layer';
 
 /**
  * ApplicationStack - Main infrastructure for Second Brain
@@ -102,6 +104,27 @@ export class SecondBrainApp extends Construct {
       description: 'URL of message processing queue',
     });
 
+    // ===== LAMBDA LAYER =====
+
+    /**
+     * Lambda Layer
+     * Contains all dependencies and shared libraries
+     */
+    const lambdaLayer = new LambdaLayer(this, 'LambdaLayer', {
+      appName: 'second-brain',
+    });
+
+    // Get lambda directory from context for unified code asset
+    const lambdaDir = this.node.tryGetContext('LambdaDirectoryPath');
+    if (!lambdaDir || !fs.existsSync(lambdaDir)) {
+      throw new Error(
+        `LambdaDirectoryPath context variable not set or invalid: ${lambdaDir}`
+      );
+    }
+
+    // Shared Lambda code asset
+    const lambdaCode = lambda.Code.fromAsset(lambdaDir);
+
     // ===== API LAYER =====
 
     /**
@@ -125,10 +148,11 @@ export class SecondBrainApp extends Construct {
     this.messageHandlerFunction = new lambda.Function(this, 'MessageHandler', {
       functionName: 'second-brain-message-handler',
       runtime: lambda.Runtime.PYTHON_3_11,
-      handler: 'index.lambda_handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/message_handler')),
+      handler: 'sb_lambda.message_handler.index.lambda_handler',
+      code: lambdaCode,
       timeout: cdk.Duration.seconds(10),
       memorySize: 256,
+      layers: [lambdaLayer.layer],
       environment: {
         DYNAMODB_TABLE_NAME: this.dataTable.tableName,
         S3_BUCKET_NAME: this.dataBucket.bucketName,
@@ -187,10 +211,11 @@ export class SecondBrainApp extends Construct {
     this.processingFunction = new lambda.Function(this, 'ProcessingFunction', {
       functionName: 'second-brain-processor',
       runtime: lambda.Runtime.PYTHON_3_11,
-      handler: 'index.lambda_handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/processor')),
+      handler: 'sb_lambda.processor.index.lambda_handler',
+      code: lambdaCode,
       timeout: cdk.Duration.minutes(5),
       memorySize: 512,
+      layers: [lambdaLayer.layer],
       environment: processingEnv,
       logGroup: processingFunctionLogGroup,
     });

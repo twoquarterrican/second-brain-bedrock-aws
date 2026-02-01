@@ -206,8 +206,8 @@ def main(bot_token: str, webhook_url: str, env_file: str, region: str):
         click.echo("   Looking up CDK stack outputs...", nl=False)
         outputs = get_cdk_outputs()
 
-        if outputs and "LambdaFunctionUrl" in outputs:
-            webhook_url = outputs["LambdaFunctionUrl"]
+        if outputs and "WebhookUrl" in outputs:
+            webhook_url = outputs["WebhookUrl"]
             click.secho(" ✓ Found", fg="green")
             click.echo(f"   From CDK: {webhook_url}")
             click.echo()

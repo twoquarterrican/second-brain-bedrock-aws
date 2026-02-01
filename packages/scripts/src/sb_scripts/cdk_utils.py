@@ -49,3 +49,25 @@ def find_bedrock_dockerfile_parent() -> Path:
 
     # Return as POSIX path for cross-platform compatibility
     return bedrock_dir.resolve()
+
+
+def find_lambda_directory() -> Path:
+    """Find the lambda package directory.
+
+    Returns:
+        Absolute POSIX path to packages/lambda directory
+
+    Raises:
+        RuntimeError: If lambda directory cannot be found
+    """
+    project_root = find_project_root()
+    lambda_dir = project_root / "packages" / "lambda"
+
+    if not lambda_dir.exists():
+        raise RuntimeError(
+            f"Lambda directory not found at {lambda_dir}. "
+            f"Ensure packages/lambda directory exists."
+        )
+
+    # Return as POSIX path for cross-platform compatibility
+    return lambda_dir.resolve()

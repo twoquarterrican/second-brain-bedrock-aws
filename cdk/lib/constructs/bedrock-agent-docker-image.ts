@@ -19,7 +19,7 @@ export class BedrockAgentDockerImage extends Construct {
             throw new Error("BedrockDockerfileParentPath");
         }
         const asset = new ecr_assets.DockerImageAsset(this, `${props.appName}-AppImage`, {
-            directory: path.join(__dirname, "../../../"), // path to root of the project
+            directory: directory,
         });
 
         this.imageUri = asset.imageUri;
