@@ -89,6 +89,8 @@ class SecondBrainDeployer:
             click.secho(f"✗ {e}", fg="red")
             return False
 
+        click.echo(f"   AWS Account: {account}", dim=True)
+
         cmd = [
             "cdk",
             "synth",
@@ -120,6 +122,8 @@ class SecondBrainDeployer:
         except RuntimeError as e:
             click.secho(f"✗ {e}", fg="red")
             return False
+
+        click.echo(f"   AWS Account: {account}", dim=True)
 
         cmd = [
             "cdk",

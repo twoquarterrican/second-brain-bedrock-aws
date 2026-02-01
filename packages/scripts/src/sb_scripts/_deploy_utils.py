@@ -76,6 +76,10 @@ def run_command(
     if description:
         click.echo(description, nl=False)
 
+    # Log the command being executed
+    cmd_str = " ".join(cmd)
+    click.echo(f"\n   Command: {cmd_str}", dim=True)
+
     result = subprocess.run(
         cmd,
         cwd=cwd,
