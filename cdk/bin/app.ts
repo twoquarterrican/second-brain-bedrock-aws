@@ -1,8 +1,32 @@
 import * as cdk from 'aws-cdk-lib';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {SecondBrainStack} from "../lib/stacks/second-brain-stack";
 import {App} from "aws-cdk-lib";
 
 const app = new App();
+
+// Discover project root by walking up directory tree
+function findProjectRoot(current: string): string {
+  while (current !== path.dirname(current)) {
+    if (fs.existsSync(path.join(current, '.git')) ||
+        (fs.existsSync(path.join(current, 'pyproject.toml')) &&
+         fs.existsSync(path.join(current, 'packages')))) {
+      return current;
+    }
+    current = path.dirname(current);
+  }
+  throw new Error('Could not find project root');
+}
+
+const projectRoot = findProjectRoot(path.dirname(__filename));
+const bedrockDir = path.join(projectRoot, 'packages', 'bedrock');
+const packagesDir = path.join(projectRoot, 'packages');
+
+// Set context variables for constructs to use
+app.node.setContext('ProjectRootPath', projectRoot);
+app.node.setContext('BedrockDockerfileParentPath', bedrockDir);
+app.node.setContext('PackagesDirectoryPath', packagesDir);
 
 // CDK needs both account and region. Account comes from CDK_DEFAULT_ACCOUNT env var
 // which is set by the AWS SDK/CLI based on the current AWS credentials

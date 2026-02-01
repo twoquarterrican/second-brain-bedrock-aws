@@ -100,12 +100,6 @@ class SecondBrainDeployer:
             "--all",
             "--region",
             self.region,
-            "--context",
-            f"ProjectRootPath={self.project_root_for_context.as_posix()}",
-            "--context",
-            f"BedrockDockerfileParentPath={self.bedrock_docker_path.as_posix()}",
-            "--context",
-            f"PackagesDirectoryPath={self.packages_dir.as_posix()}",
         ]
 
         result = run_command(
@@ -136,12 +130,6 @@ class SecondBrainDeployer:
             "--all",
             "--region",
             self.region,
-            "--context",
-            f"ProjectRootPath={self.project_root_for_context.as_posix()}",
-            "--context",
-            f"BedrockDockerfileParentPath={self.bedrock_docker_path.as_posix()}",
-            "--context",
-            f"PackagesDirectoryPath={self.packages_dir.as_posix()}",
         ]
 
         if not self.require_approval:
