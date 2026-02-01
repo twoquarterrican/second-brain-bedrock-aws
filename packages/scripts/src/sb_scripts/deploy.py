@@ -89,17 +89,14 @@ class SecondBrainDeployer:
             click.secho(f"✗ {e}", fg="red")
             return False
 
-        # Set up environment for CDK
-        env = os.environ.copy()
-        env["CDK_DEFAULT_ACCOUNT"] = account
-        env["CDK_DEFAULT_REGION"] = self.region
-
         cmd = [
             "cdk",
             "synth",
             "--all",
             "--region",
             self.region,
+            "--context",
+            f"AWS_ACCOUNT_ID={account}",
             "--context",
             f"ProjectRootPath={self.project_root_for_context.as_posix()}",
             "--context",
@@ -112,7 +109,6 @@ class SecondBrainDeployer:
             cmd,
             cwd=self.cdk_dir,
             description="🔨 Synthesizing CloudFormation template...",
-            env=env,
         )
         return result.returncode == 0
 
@@ -125,17 +121,14 @@ class SecondBrainDeployer:
             click.secho(f"✗ {e}", fg="red")
             return False
 
-        # Set up environment for CDK
-        env = os.environ.copy()
-        env["CDK_DEFAULT_ACCOUNT"] = account
-        env["CDK_DEFAULT_REGION"] = self.region
-
         cmd = [
             "cdk",
             "deploy",
             "--all",
             "--region",
             self.region,
+            "--context",
+            f"AWS_ACCOUNT_ID={account}",
             "--context",
             f"ProjectRootPath={self.project_root_for_context.as_posix()}",
             "--context",
@@ -151,7 +144,6 @@ class SecondBrainDeployer:
             cmd,
             cwd=self.cdk_dir,
             description="🚀 Deploying Second Brain to AWS...",
-            env=env,
         )
         return result.returncode == 0
 
