@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from InquirerPy import inquirer
 
 from ._deploy_utils import check_tools, run_command, show_install_instructions
-from .cdk_utils import find_bedrock_dockerfile_parent, find_lambda_directory, find_project_root
+from .cdk_utils import find_bedrock_dockerfile_parent, find_packages_directory, find_project_root
 
 load_dotenv()
 
@@ -28,7 +28,7 @@ class SecondBrainDeployer:
         self.project_root = find_project_root()
         self.cdk_dir = self.project_root / "cdk"
         self.bedrock_docker_path = find_bedrock_dockerfile_parent()
-        self.lambda_dir = find_lambda_directory()
+        self.packages_dir = find_packages_directory()
 
         self.tools_info = {
             "npm": "https://nodejs.org",
@@ -63,7 +63,7 @@ class SecondBrainDeployer:
             "--context",
             f"BedrockDockerfileParentPath={self.bedrock_docker_path.as_posix()}",
             "--context",
-            f"LambdaDirectoryPath={self.lambda_dir.as_posix()}",
+            f"PackagesDirectoryPath={self.packages_dir.as_posix()}",
         ]
 
         result = run_command(
@@ -83,7 +83,7 @@ class SecondBrainDeployer:
             "--context",
             f"BedrockDockerfileParentPath={self.bedrock_docker_path.as_posix()}",
             "--context",
-            f"LambdaDirectoryPath={self.lambda_dir.as_posix()}",
+            f"PackagesDirectoryPath={self.packages_dir.as_posix()}",
         ]
 
         if not self.require_approval:
@@ -111,8 +111,8 @@ class SecondBrainDeployer:
 
         click.echo(f"🌍 Region: {self.region}")
         click.echo(f"📁 Project: {self.project_root}")
+        click.echo(f"📦 Packages: {self.packages_dir}")
         click.echo(f"🐳 Bedrock Docker: {self.bedrock_docker_path}")
-        click.echo(f"⚡ Lambda Code: {self.lambda_dir}")
         click.echo()
 
         # Check prerequisites

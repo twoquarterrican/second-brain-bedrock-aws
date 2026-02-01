@@ -114,12 +114,17 @@ export class SecondBrainApp extends Construct {
       appName: 'second-brain',
     });
 
-    // Get lambda directory from context for unified code asset
-    const lambdaDir = this.node.tryGetContext('LambdaDirectoryPath');
-    if (!lambdaDir || !fs.existsSync(lambdaDir)) {
+    // Get packages directory from context for unified code asset
+    const packagesDir = this.node.tryGetContext('PackagesDirectoryPath');
+    if (!packagesDir || !fs.existsSync(packagesDir)) {
       throw new Error(
-        `LambdaDirectoryPath context variable not set or invalid: ${lambdaDir}`
+        `PackagesDirectoryPath context variable not set or invalid: ${packagesDir}`
       );
+    }
+
+    const lambdaDir = path.join(packagesDir, 'lambda');
+    if (!fs.existsSync(lambdaDir)) {
+      throw new Error(`Lambda directory not found at ${lambdaDir}`);
     }
 
     // Shared Lambda code asset
@@ -147,7 +152,7 @@ export class SecondBrainApp extends Construct {
 
     this.messageHandlerFunction = new lambda.Function(this, 'MessageHandler', {
       functionName: 'second-brain-message-handler',
-      runtime: lambda.Runtime.PYTHON_3_11,
+      runtime: lambda.Runtime.PYTHON_3_13,
       handler: 'sb_lambda.message_handler.index.lambda_handler',
       code: lambdaCode,
       timeout: cdk.Duration.seconds(10),
@@ -210,7 +215,7 @@ export class SecondBrainApp extends Construct {
 
     this.processingFunction = new lambda.Function(this, 'ProcessingFunction', {
       functionName: 'second-brain-processor',
-      runtime: lambda.Runtime.PYTHON_3_11,
+      runtime: lambda.Runtime.PYTHON_3_13,
       handler: 'sb_lambda.processor.index.lambda_handler',
       code: lambdaCode,
       timeout: cdk.Duration.minutes(5),

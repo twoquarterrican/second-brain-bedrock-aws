@@ -14,27 +14,30 @@ export class LambdaLayer extends Construct {
   constructor(scope: Construct, id: string, props: Props) {
     super(scope, id);
 
-    // Get lambda directory from context
-    const lambdaDir = this.node.tryGetContext('LambdaDirectoryPath');
-    if (!lambdaDir || !fs.existsSync(lambdaDir)) {
+    // Get packages directory from context
+    const packagesDir = this.node.tryGetContext('PackagesDirectoryPath');
+    if (!packagesDir || !fs.existsSync(packagesDir)) {
       throw new Error(
-        `LambdaDirectoryPath context variable not set or invalid: ${lambdaDir}`
+        `PackagesDirectoryPath context variable not set or invalid: ${packagesDir}`
       );
     }
 
-    // Get shared package directory
-    const projectRoot = path.dirname(path.dirname(path.dirname(lambdaDir)));
-    const sharedDir = path.join(projectRoot, 'packages', 'shared');
-
-    if (!fs.existsSync(sharedDir)) {
-      throw new Error(`Shared package directory not found: ${sharedDir}`);
+    const lambdaDir = path.join(packagesDir, 'lambda');
+    if (!fs.existsSync(lambdaDir)) {
+      throw new Error(`Lambda directory not found at ${lambdaDir}`);
     }
 
     // Create layer with bundling
     this.layer = new lambda.LayerVersion(this, `${props.appName}-Layer`, {
       code: lambda.Code.fromAsset(lambdaDir, {
         bundling: {
-          image: lambda.Runtime.PYTHON_3_11.bundlingImage,
+          image: lambda.Runtime.PYTHON_3_13.bundlingImage,
+          volumes: [
+            {
+              hostPath: packagesDir,
+              containerPath: '/packages',
+            },
+          ],
           command: [
             'bash',
             '-c',
@@ -42,11 +45,11 @@ export class LambdaLayer extends Construct {
               // Create the proper layer structure
               'mkdir -p /asset-output/python',
               // Install dependencies from lambda pyproject.toml
-              `cd ${lambdaDir} && pip install . --target /asset-output/python --no-deps`,
+              'cd /packages/lambda && pip install . --target /asset-output/python --no-deps',
               // Install external dependencies
-              `pip install boto3 pydantic aws-lambda-logging requests --target /asset-output/python`,
+              'pip install boto3 pydantic aws-lambda-logging requests --target /asset-output/python',
               // Copy editable dependencies (sb_shared)
-              `cp -r ${sharedDir}/src/sb_shared /asset-output/python/`,
+              'cp -r /packages/shared/src/sb_shared /asset-output/python/',
             ].join(' && '),
           ],
           user: 'root',
