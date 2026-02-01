@@ -2,7 +2,7 @@
 
 import subprocess
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Optional
 
 import click
 
@@ -56,9 +56,10 @@ def get_project_root() -> Path:
 
 def run_command(
     cmd: List[str],
-    cwd: Path = None,
+    cwd: Optional[Path] = None,
     capture_output: bool = False,
-    description: str = None,
+    description: Optional[str] = None,
+    env: Optional[Dict[str, str]] = None,
 ) -> subprocess.CompletedProcess:
     """Run a command and handle output.
 
@@ -67,6 +68,7 @@ def run_command(
         cwd: Working directory
         capture_output: Whether to capture output
         description: Description for user display
+        env: Environment variables dict (merged with current env if provided)
 
     Returns:
         CompletedProcess result
@@ -79,6 +81,7 @@ def run_command(
         cwd=cwd,
         capture_output=capture_output,
         text=True,
+        env=env,
     )
 
     if description:

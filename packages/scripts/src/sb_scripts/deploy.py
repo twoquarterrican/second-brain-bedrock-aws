@@ -1,6 +1,8 @@
 """Unified CDK deployment script for Second Brain infrastructure."""
 
+import json
 import os
+import subprocess
 import sys
 
 import click
@@ -49,6 +51,25 @@ class SecondBrainDeployer:
             return False
         return True
 
+    def get_aws_account(self) -> str:
+        """Get AWS account ID using aws sts get-caller-identity."""
+        try:
+            result = subprocess.run(
+                ["aws", "sts", "get-caller-identity", "--output", "json"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            account = json.loads(result.stdout).get("Account")
+            if not account:
+                raise ValueError("Could not determine AWS account ID")
+            return account
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(
+                f"Failed to get AWS account ID. "
+                f"Make sure you're authenticated to AWS (check AWS_PROFILE): {e.stderr}"
+            )
+
     def install_dependencies(self) -> bool:
         """Install CDK dependencies."""
         result = run_command(
@@ -61,9 +82,22 @@ class SecondBrainDeployer:
 
     def synth_stack(self) -> bool:
         """Synthesize CDK stack to CloudFormation template."""
+        # Get AWS account ID
+        try:
+            account = self.get_aws_account()
+        except RuntimeError as e:
+            click.secho(f"✗ {e}", fg="red")
+            return False
+
+        # Set up environment for CDK
+        env = os.environ.copy()
+        env["CDK_DEFAULT_ACCOUNT"] = account
+        env["CDK_DEFAULT_REGION"] = self.region
+
         cmd = [
             "cdk",
             "synth",
+            "--all",
             "--region",
             self.region,
             "--context",
@@ -78,14 +112,28 @@ class SecondBrainDeployer:
             cmd,
             cwd=self.cdk_dir,
             description="🔨 Synthesizing CloudFormation template...",
+            env=env,
         )
         return result.returncode == 0
 
     def deploy_stack(self) -> bool:
         """Deploy CDK stack to AWS."""
+        # Get AWS account ID
+        try:
+            account = self.get_aws_account()
+        except RuntimeError as e:
+            click.secho(f"✗ {e}", fg="red")
+            return False
+
+        # Set up environment for CDK
+        env = os.environ.copy()
+        env["CDK_DEFAULT_ACCOUNT"] = account
+        env["CDK_DEFAULT_REGION"] = self.region
+
         cmd = [
             "cdk",
             "deploy",
+            "--all",
             "--region",
             self.region,
             "--context",
@@ -103,6 +151,7 @@ class SecondBrainDeployer:
             cmd,
             cwd=self.cdk_dir,
             description="🚀 Deploying Second Brain to AWS...",
+            env=env,
         )
         return result.returncode == 0
 
