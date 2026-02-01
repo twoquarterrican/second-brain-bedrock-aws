@@ -24,6 +24,7 @@ import * as path from 'path';
 export interface Props {
   dataTable: dynamodb.Table;
   dataBucket: s3.Bucket;
+  bedrockAgentFunction?: lambda.IFunction;
 }
 
 export class SecondBrainApp extends Construct {
@@ -40,6 +41,25 @@ export class SecondBrainApp extends Construct {
     // Use shared storage from StorageStack
     this.dataTable = props.dataTable;
     this.dataBucket = props.dataBucket;
+
+    // ===== RESPONSE QUEUE =====
+
+    /**
+     * SQS Response Queue
+     * For sending processed results back to users
+     */
+    const responseQueue = new sqs.Queue(this, 'ResponseQueue', {
+      queueName: 'second-brain-responses',
+      visibilityTimeout: cdk.Duration.minutes(5),
+      retentionPeriod: cdk.Duration.hours(4),
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    new cdk.CfnOutput(this, 'ResponseQueueUrl', {
+      value: responseQueue.queueUrl,
+      exportName: 'SecondBrainResponseQueueUrl',
+      description: 'URL of response queue',
+    });
 
     // ===== ASYNC PROCESSING LAYER =====
 
@@ -153,6 +173,17 @@ export class SecondBrainApp extends Construct {
       }
     );
 
+    const processingEnv: { [key: string]: string } = {
+      DYNAMODB_TABLE_NAME: this.dataTable.tableName,
+      S3_BUCKET_NAME: this.dataBucket.bucketName,
+      RESPONSE_QUEUE_URL: responseQueue.queueUrl,
+    };
+
+    // Add Bedrock agent function name if provided
+    if (props.bedrockAgentFunction) {
+      processingEnv.BEDROCK_AGENT_FUNCTION_NAME = props.bedrockAgentFunction.functionName;
+    }
+
     this.processingFunction = new lambda.Function(this, 'ProcessingFunction', {
       functionName: 'second-brain-processor',
       runtime: lambda.Runtime.PYTHON_3_11,
@@ -160,14 +191,7 @@ export class SecondBrainApp extends Construct {
       code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/processor')),
       timeout: cdk.Duration.minutes(5),
       memorySize: 512,
-      environment: {
-        DYNAMODB_TABLE_NAME: this.dataTable.tableName,
-        S3_BUCKET_NAME: this.dataBucket.bucketName,
-        BEDROCK_AGENT_FUNCTION_NAME: 'bedrock-agent-runtime', // TODO: Make parameterizable
-
-        // TODO: Response queue URL
-        // RESPONSE_QUEUE_URL: ???,
-      },
+      environment: processingEnv,
       logGroup: processingFunctionLogGroup,
     });
 
@@ -175,10 +199,12 @@ export class SecondBrainApp extends Construct {
     this.dataTable.grantReadWriteData(this.processingFunction);
     this.dataBucket.grantRead(this.processingFunction, 'raw-events/*');
     this.messageQueue.grantConsumeMessages(this.processingFunction);
+    responseQueue.grantSendMessages(this.processingFunction);
 
-    // TODO: Grant invoke permission to Bedrock agent Lambda
-    // const bedrockAgentRole = iam.Role.fromRoleArn(...)
-    // bedrockAgentRole.grantAssumeRole(this.processingFunction.grantPrincipal)
+    // Grant invoke permission to Bedrock agent Lambda if provided
+    if (props.bedrockAgentFunction) {
+      props.bedrockAgentFunction.grantInvoke(this.processingFunction);
+    }
 
     // Wire SQS to Lambda
     const { SqsEventSource } = require('aws-cdk-lib/aws-lambda-event-sources');

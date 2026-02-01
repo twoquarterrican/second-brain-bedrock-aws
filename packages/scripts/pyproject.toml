@@ -17,16 +17,11 @@ dependencies = [
 ]
 
 [project.scripts]
-deploy-storage = "sb_scripts.deploy_storage:main"
-deploy-app = "sb_scripts.deploy_app:main"
-deploy-bedrock = "sb_scripts.deploy_bedrock:main"
+deploy = "sb_scripts.deploy:main"
 setup-telegram = "sb_scripts.setup_telegram:main"
 
-#[tool.uv.sources]
-#sb-shared = { path = "../shared" }
-#sb-bedrock = { path = "../bedrock" }
-#sb-lambda = { path = "../lambda" }
-#sb-tests = { path = "../tests" }
+[tool.uv.sources]
+sb-shared = { workspace = true }
 
 [tool.uv]
 default-groups = ["dev"]
