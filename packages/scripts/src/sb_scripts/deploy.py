@@ -7,15 +7,9 @@ import sys
 
 import click
 from dotenv import load_dotenv
-from InquirerPy import inquirer
 
 from ._deploy_utils import check_tools, run_command, show_install_instructions
-from .cdk_utils import (
-    find_bedrock_dockerfile_parent,
-    find_packages_directory,
-    find_project_root,
-    find_project_root_for_context,
-)
+from .cdk_utils import find_project_root
 
 load_dotenv()
 
@@ -23,20 +17,15 @@ load_dotenv()
 class SecondBrainDeployer:
     """Handles unified CDK deployment for Second Brain."""
 
-    def __init__(self, region: str = None, require_approval: bool = True):
+    def __init__(self, region: str = None):
         """Initialize deployer.
 
         Args:
             region: AWS region for deployment
-            require_approval: Whether to require approval before deployment
         """
         self.region = region or os.getenv("AWS_REGION", "us-west-2")
-        self.require_approval = require_approval
         self.project_root = find_project_root()
         self.cdk_dir = self.project_root / "cdk"
-        self.bedrock_docker_path = find_bedrock_dockerfile_parent()
-        self.packages_dir = find_packages_directory()
-        self.project_root_for_context = find_project_root_for_context()
 
         self.tools_info = {
             "npm": "https://nodejs.org",
@@ -130,10 +119,8 @@ class SecondBrainDeployer:
             "--all",
             "--region",
             self.region,
+            "--require-approval=never",
         ]
-
-        if not self.require_approval:
-            cmd.append("--require-approval=never")
 
         result = run_command(
             cmd,
@@ -157,8 +144,6 @@ class SecondBrainDeployer:
 
         click.echo(f"🌍 Region: {self.region}")
         click.echo(f"📁 Project: {self.project_root}")
-        click.echo(f"📦 Packages: {self.packages_dir}")
-        click.echo(f"🐳 Bedrock Docker: {self.bedrock_docker_path}")
         click.echo()
 
         # Check prerequisites
@@ -182,24 +167,10 @@ class SecondBrainDeployer:
         click.echo("       - DynamoDB table (second-brain)")
         click.echo("       - S3 bucket (second-brain-data)")
         click.echo("     Bedrock Agent:")
-        click.echo("       - Docker image from: " + str(self.bedrock_docker_path))
         click.echo("       - Lambda function (bedrock-agent-runtime)")
         click.echo("     Application:")
         click.echo("       - SQS queue (second-brain-messages)")
         click.echo("       - Lambda functions (message-handler, processor)")
-        click.echo()
-
-        # Confirm if deploying (not for synth-only)
-        if not synth_only and self.require_approval:
-            confirm = inquirer.confirm(
-                message="Proceed with deployment?",
-                default=False,
-            ).execute()
-
-            if not confirm:
-                click.echo("Operation cancelled.")
-                return False
-
         click.echo()
         step_num = "4️⃣"
         if synth_only:
@@ -237,16 +208,11 @@ class SecondBrainDeployer:
     help="AWS region for deployment (Bedrock requires us-west-2)",
 )
 @click.option(
-    "--no-approval",
-    is_flag=True,
-    help="Skip approval confirmation",
-)
-@click.option(
     "--synth-only",
     is_flag=True,
     help="Only synthesize CloudFormation template, don't deploy",
 )
-def main(region: str, no_approval: bool, synth_only: bool):
+def main(region: str, synth_only: bool):
     """Deploy or synthesize Second Brain infrastructure.
 
     This script will:
@@ -256,7 +222,7 @@ def main(region: str, no_approval: bool, synth_only: bool):
 
     Make sure you're authenticated to AWS before running deploy.
     """
-    deployer = SecondBrainDeployer(region=region, require_approval=not no_approval)
+    deployer = SecondBrainDeployer(region=region)
 
     if not deployer.run(synth_only=synth_only):
         sys.exit(1)

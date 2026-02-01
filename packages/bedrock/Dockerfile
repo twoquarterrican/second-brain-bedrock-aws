@@ -1,39 +1,44 @@
-FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
-WORKDIR /app
+# This should be run from project root e.g., $ docker build -f packages/bedrock/Dockerfile <project_root>
+# Stage 1: Builder - Install dependencies with full workspace access
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim as builder
 
-# All environment variables in one layer
+WORKDIR /build
+
 ENV UV_SYSTEM_PYTHON=1 \
     UV_COMPILE_BYTECODE=1 \
-    UV_NO_PROGRESS=1 \
-    PYTHONUNBUFFERED=1 \
-    DOCKER_CONTAINER=1
+    UV_NO_PROGRESS=1
 
-
-
+# Copy important parts of workspace so uv can resolve workspace dependencies
+COPY packages packages
 COPY pyproject.toml pyproject.toml
-# Install from requirements file
-RUN uv pip install -r pyproject.toml
 
+# Install all packages
+RUN uv pip install \
+  --target /install \
+  /build/packages/shared \
+  /build/packages/bedrock
 
+# Stage 2: Runtime - Minimal image with only what's needed
+FROM python:3.14-bookworm-slim
 
+WORKDIR /app
 
-RUN uv pip install aws-opentelemetry-distro==0.12.2
+# Copy installed dependencies from builder stage
+COPY --from=builder /install /usr/local/lib/python3.14/site-packages
 
+# Copy bedrock source code
+COPY packages/bedrock/src /app/src
 
-# Signal that this is running in Docker for host binding logic
-ENV DOCKER_CONTAINER=1
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+  DOCKER_CONTAINER=1 \
+  PATH="/usr/local/bin:$PATH"
 
 # Create non-root user
 RUN useradd -m -u 1000 bedrock_agentcore
 USER bedrock_agentcore
 
-EXPOSE 9000
-EXPOSE 8000
-EXPOSE 8080
+EXPOSE 9000 8000 8080
 
-# Copy entire project (respecting .dockerignore)
-COPY . .
-
-# Use the full module path
-
-CMD ["cd", "src", "&&", "opentelemetry-instrument", "python", "-m", "sb_bedrock.main"]
+# Run the application
+CMD ["opentelemetry-instrument", "python", "-m", "sb_bedrock.main"]
