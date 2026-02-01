@@ -89,7 +89,7 @@ class SecondBrainDeployer:
             click.secho(f"✗ {e}", fg="red")
             return False
 
-        click.echo(f"   AWS Account: {account}", dim=True)
+        click.echo(click.style(f"   AWS Account: {account}", dim=True))
 
         cmd = [
             "cdk",
@@ -123,7 +123,7 @@ class SecondBrainDeployer:
             click.secho(f"✗ {e}", fg="red")
             return False
 
-        click.echo(f"   AWS Account: {account}", dim=True)
+        click.echo(click.style(f"   AWS Account: {account}", dim=True))
 
         cmd = [
             "cdk",

@@ -78,7 +78,7 @@ def run_command(
 
     # Log the command being executed
     cmd_str = " ".join(cmd)
-    click.echo(f"\n   Command: {cmd_str}", dim=True)
+    click.echo(click.style(f"\n   Command: {cmd_str}", dim=True))
 
     result = subprocess.run(
         cmd,
