@@ -13,12 +13,12 @@ import { Construct } from 'constructs';
  * This stack has no dependencies and is deployed first.
  * Both ApplicationStack and BedrockStack depend on this.
  */
-export class SecondBrainStorage extends cdk.Stack {
+export class SecondBrainStorage extends Construct {
   public readonly dataTable: dynamodb.Table;
   public readonly dataBucket: s3.Bucket;
 
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+  constructor(scope: Construct, id: string) {
+    super(scope, id);
 
     /**
      * DynamoDB Table: second-brain
