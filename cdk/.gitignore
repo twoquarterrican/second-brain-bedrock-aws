@@ -6,7 +6,6 @@ cdk.out/
 node_modules/
 
 # Built TypeScript files
-lib/
 *.d.ts
 *.js
 !jest.config.js

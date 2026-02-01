@@ -11,6 +11,7 @@ downloads/
 eggs/
 .eggs/
 lib64/
+
 # Note: lib/ is kept for second_brain_core shared library
 # Use /lib/python/ for source code
 # Ignore Python build artifacts
@@ -42,35 +43,22 @@ venv.bak/
 .vscode/launch.json
 .vscode/extensions.json
 *.code-workspace
-*.swp
-*.swo
-*~
 
-# ===== IDE - PyCharm =====
+# ===== IDE - PyCharm / IntelliJ / other =====
 .idea/
 .idea_modules/
 *.iml
 *.iws
 *.ipr
-.DS_Store
 *.sublime-workspace
 *.sublime-project
-
-# ===== IDE - IntelliJ =====
 .IntelliJIdea*/
-*.iml
-*.iws
-*.ipr
-.idea/
 out/
-
-# ===== IDE - Other =====
 .eclipse/
 .settings/
 .project
 .pydevproject
 .metadata
-*.sublime-workspace
 
 # ===== Testing =====
 .pytest_cache/
@@ -151,8 +139,6 @@ Thumbs.db
 .com.apple.timemachine.donotpresent
 
 # ===== Windows =====
-Thumbs.db
-ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
@@ -162,3 +148,11 @@ $RECYCLE.BIN/
 .env.example.local
 secrets/
 .secrets/
+*.js
+!jest.config.js
+*.d.ts
+node_modules
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out

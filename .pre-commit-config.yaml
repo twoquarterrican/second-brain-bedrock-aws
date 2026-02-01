@@ -61,13 +61,13 @@ repos:
     args: [--profile, black, --line-length, '100']
 
   # Markdown linting
-- repo: https://github.com/executablebooks/mdformat
-  rev: 0.7.16
-  hooks:
-  - id: mdformat
-    additional_dependencies:
-    - mdformat-gfm
-    args: [--wrap, '100']
+#- repo: https://github.com/executablebooks/mdformat
+#  rev: 0.7.16
+#  hooks:
+#  - id: mdformat
+#    additional_dependencies:
+#    - mdformat-gfm
+#    args: [--wrap, '100']
 
   # Docstring linting
 #- repo: https://github.com/PyCQA/pydocstyle

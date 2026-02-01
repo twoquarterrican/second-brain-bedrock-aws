@@ -10,6 +10,9 @@ readme = "README.md"
 requires-python = ">=3.10"
 
 [project.scripts]
+deploy-storage = "scripts.deploy_storage:main"
+deploy-app = "scripts.deploy_app:main"
+deploy-bedrock = "scripts.deploy_bedrock:main"
 setup-telegram = "scripts.setup_telegram:main"
 
 [dependency-groups]
