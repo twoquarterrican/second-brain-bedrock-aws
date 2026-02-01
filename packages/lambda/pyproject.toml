@@ -11,12 +11,12 @@ dependencies = [
     "sb-shared",
     "boto3>=1.28.0",
     "pydantic>=2.0.0",
-    "aws-lambda-logging>=0.5.1",
+    "aws-lambda-logging>=0.1.1",
     "requests>=2.31.0",
 ]
 
-[tool.uv.sources]
-sb-shared = { path = "../shared" }
+#[tool.uv.sources]
+#sb-shared = { path = "../shared" }
 
 [tool.uv]
 default-groups = ["dev"]

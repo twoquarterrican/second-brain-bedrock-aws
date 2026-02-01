@@ -14,8 +14,8 @@ dependencies = [
     "bedrock-agentcore",
 ]
 
-[tool.uv.sources]
-sb-shared = { path = "../shared" }
+#[tool.uv.sources]
+#sb-shared = { workspace }
 
 [tool.uv]
 default-groups = ["dev"]

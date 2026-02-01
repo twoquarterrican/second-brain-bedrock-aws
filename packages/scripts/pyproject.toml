@@ -9,9 +9,6 @@ description = "Second Brain CLI scripts and deployment tools"
 requires-python = ">=3.10"
 dependencies = [
     "sb-shared",
-    "sb-bedrock",
-    "sb-lambda",
-    "sb-tests",
     "click>=8.1.0",
     "InquirerPy>=0.3.4",
     "requests>=2.31.0",
@@ -25,11 +22,11 @@ deploy-app = "sb_scripts.deploy_app:main"
 deploy-bedrock = "sb_scripts.deploy_bedrock:main"
 setup-telegram = "sb_scripts.setup_telegram:main"
 
-[tool.uv.sources]
-sb-shared = { path = "../shared" }
-sb-bedrock = { path = "../bedrock" }
-sb-lambda = { path = "../lambda" }
-sb-tests = { path = "../tests" }
+#[tool.uv.sources]
+#sb-shared = { path = "../shared" }
+#sb-bedrock = { path = "../bedrock" }
+#sb-lambda = { path = "../lambda" }
+#sb-tests = { path = "../tests" }
 
 [tool.uv]
 default-groups = ["dev"]

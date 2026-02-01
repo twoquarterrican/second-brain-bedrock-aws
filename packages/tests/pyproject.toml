@@ -16,9 +16,9 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-sb-shared = { path = "../shared" }
-sb-bedrock = { path = "../bedrock" }
-sb-lambda = { path = "../lambda" }
+sb-shared = { workspace = true }
+sb-bedrock = { workspace = true }
+sb-lambda = { workspace = true }
 
 [tool.uv]
 default-groups = ["dev"]
