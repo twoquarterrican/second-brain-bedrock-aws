@@ -3,19 +3,22 @@ requires = ["uv_build>=0.9.6,<0.10.0"]
 build-backend = "uv_build"
 
 [project]
-name = "sb-bedrock"
+name = "sb-tests"
 version = "0.1.0"
-description = "Second Brain Bedrock agent runtime and orchestration"
+description = "Second Brain test suite"
 requires-python = ">=3.10"
 dependencies = [
     "sb-shared",
-    "langchain>=0.0.300",
-    "langchain-aws>=0.0.0",
-    "bedrock-agentcore",
+    "sb-bedrock",
+    "sb-lambda",
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
 ]
 
 [tool.uv.sources]
 sb-shared = { path = "../shared" }
+sb-bedrock = { path = "../bedrock" }
+sb-lambda = { path = "../lambda" }
 
 [tool.uv]
 default-groups = ["dev"]
@@ -23,6 +26,7 @@ default-groups = ["dev"]
 [dependency-groups]
 dev = [
     "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
     "black>=23.7.0",
     "ruff>=0.1.0",
     "mypy>=1.5.0",

@@ -3,15 +3,16 @@ requires = ["uv_build>=0.9.6,<0.10.0"]
 build-backend = "uv_build"
 
 [project]
-name = "sb-bedrock"
+name = "sb-lambda"
 version = "0.1.0"
-description = "Second Brain Bedrock agent runtime and orchestration"
+description = "Second Brain Lambda functions for message handling and processing"
 requires-python = ">=3.10"
 dependencies = [
     "sb-shared",
-    "langchain>=0.0.300",
-    "langchain-aws>=0.0.0",
-    "bedrock-agentcore",
+    "boto3>=1.28.0",
+    "pydantic>=2.0.0",
+    "aws-lambda-logging>=0.5.1",
+    "requests>=2.31.0",
 ]
 
 [tool.uv.sources]

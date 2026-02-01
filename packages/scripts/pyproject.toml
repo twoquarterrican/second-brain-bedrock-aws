@@ -3,19 +3,33 @@ requires = ["uv_build>=0.9.6,<0.10.0"]
 build-backend = "uv_build"
 
 [project]
-name = "sb-bedrock"
+name = "sb-scripts"
 version = "0.1.0"
-description = "Second Brain Bedrock agent runtime and orchestration"
+description = "Second Brain CLI scripts and deployment tools"
 requires-python = ">=3.10"
 dependencies = [
     "sb-shared",
-    "langchain>=0.0.300",
-    "langchain-aws>=0.0.0",
-    "bedrock-agentcore",
+    "sb-bedrock",
+    "sb-lambda",
+    "sb-tests",
+    "click>=8.1.0",
+    "InquirerPy>=0.3.4",
+    "requests>=2.31.0",
+    "boto3>=1.28.0",
+    "python-dotenv>=1.0.0",
 ]
+
+[project.scripts]
+deploy-storage = "sb_scripts.deploy_storage:main"
+deploy-app = "sb_scripts.deploy_app:main"
+deploy-bedrock = "sb_scripts.deploy_bedrock:main"
+setup-telegram = "sb_scripts.setup_telegram:main"
 
 [tool.uv.sources]
 sb-shared = { path = "../shared" }
+sb-bedrock = { path = "../bedrock" }
+sb-lambda = { path = "../lambda" }
+sb-tests = { path = "../tests" }
 
 [tool.uv]
 default-groups = ["dev"]
