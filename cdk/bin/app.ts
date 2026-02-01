@@ -25,7 +25,7 @@ const packagesDir = path.join(projectRoot, 'packages');
 
 // Set context variables for constructs to use
 app.node.setContext('ProjectRootPath', projectRoot);
-app.node.setContext('BedrockDockerfileParentPath', bedrockDir);
+app.node.setContext('BedrockDockerfilePath', path.join(bedrockDir , 'Dockerfile'));
 app.node.setContext('PackagesDirectoryPath', packagesDir);
 
 // CDK needs both account and region. Account comes from CDK_DEFAULT_ACCOUNT env var
