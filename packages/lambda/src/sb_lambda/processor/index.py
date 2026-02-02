@@ -36,19 +36,21 @@ from sb_shared import (
 )
 
 
-def invoke_bedrock_agent(user_id: str, message_content: str) -> dict:
+def invoke_bedrock_agent(user_id: str, message_content: str) -> None:
     """
-    Invoke Bedrock agent via Agents Runtime API and handle streaming response.
+    Invoke Bedrock agent via Agents Runtime API.
 
-    The agent processes the message and handles all business logic
-    including creating tasks, reminders, and other items via tools.
+    The agent processes the message and handles all business logic asynchronously:
+    - Parses user intent
+    - Creates tasks, reminders, todos via tools
+    - Executes any other domain-specific operations
+    - Logs its own activity
+
+    The agent is responsible for logging and persisting all results via its tools.
 
     Args:
         user_id: User ID for session tracking
         message_content: Raw message text
-
-    Returns:
-        Agent response with collected events and output
 
     Raises:
         ValueError: If required environment variables are not set
@@ -58,11 +60,6 @@ def invoke_bedrock_agent(user_id: str, message_content: str) -> dict:
         ASIS (As-Is) is the standard Bedrock Agents alias that automatically
         routes to the latest unpromoted agent version. This allows the agent
         to be updated without requiring code changes to update alias references.
-
-    Streaming Response:
-        The Bedrock Agents Runtime returns a streamed response containing
-        multiple event types (trace, payloadPart, returnControl). This function
-        collects all events and extracts the final output.
     """
     agent_id = os.getenv("BEDROCK_AGENT_ID")
     agent_alias_id = os.getenv("BEDROCK_AGENT_ALIAS_ID")
@@ -77,35 +74,13 @@ def invoke_bedrock_agent(user_id: str, message_content: str) -> dict:
     # Use user_id as session ID for consistent conversation context
     session_id = user_id
 
-    response = client.invoke_agent(
+    # Invoke agent - it handles logging and tool execution internally
+    client.invoke_agent(
         agentId=agent_id,
         agentAliasId=agent_alias_id,
         sessionId=session_id,
         inputText=message_content,
     )
-
-    # Handle streaming response
-    events = []
-    final_output = None
-
-    if "ResponseStream" in response:
-        # Iterate through response stream events
-        for event in response["ResponseStream"]:
-            events.append(event)
-
-            # Extract final output from payloadPart events
-            if "payloadPart" in event:
-                payload = event["payloadPart"].get("bytes")
-                if payload:
-                    final_output = (
-                        payload.decode("utf-8") if isinstance(payload, bytes) else payload
-                    )
-
-    return {
-        "events": events,
-        "final_output": final_output,
-        "event_count": len(events),
-    }
 
 
 @lambda_handler(kind="sqs")
@@ -163,16 +138,16 @@ def lambda_handler(event, _context):
                 # Agent handles all business logic including:
                 # - Parsing user intent
                 # - Creating tasks, reminders, todos via tools
+                # - Logging its activity
                 # - Any other domain-specific operations
-                agent_response = invoke_bedrock_agent(user_id, message.raw_content)
+                invoke_bedrock_agent(user_id, message.raw_content)
 
-                # Log agent response
+                # Log agent invocation
                 log_event(
                     "agent_invoked",
                     {
                         "user_id": user_id,
                         "message_id": message_id,
-                        "agent_response": agent_response,
                     },
                 )
 
