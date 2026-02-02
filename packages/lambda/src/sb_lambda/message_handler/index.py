@@ -98,13 +98,14 @@ def save_raw_event_to_s3(user_id: str, message_id: str, raw_message: dict) -> st
     return s3_key
 
 
-def queue_message_for_processing(message_id: str, user_id: str) -> None:
+def queue_message_for_processing(message_id: str, user_id: str, timestamp: str) -> None:
     """
     Queue message for async processing via SQS.
 
     Args:
         message_id: Message to process
         user_id: User who sent message
+        timestamp: ISO timestamp from message creation
     """
     sqs_client = boto3.client("sqs")
     queue_url = os.getenv("MESSAGE_QUEUE_URL")
@@ -114,7 +115,13 @@ def queue_message_for_processing(message_id: str, user_id: str) -> None:
 
     sqs_client.send_message(
         QueueUrl=queue_url,
-        MessageBody=json.dumps({"user_id": user_id, "message_id": message_id}),
+        MessageBody=json.dumps(
+            {
+                "user_id": user_id,
+                "message_id": message_id,
+                "timestamp": timestamp,
+            }
+        ),
     )
 
 
@@ -188,7 +195,7 @@ def lambda_handler(event, context):
         db_client.put_item(message)
 
         # 4. Queue for processing
-        queue_message_for_processing(message_id, user_id)
+        queue_message_for_processing(message_id, user_id, timestamp)
 
         # 5. Log observability event
         log_event(

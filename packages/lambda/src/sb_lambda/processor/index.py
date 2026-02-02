@@ -17,16 +17,23 @@ Environment Variables:
   - AWS_REGION
 
 TODO:
-  - Get message from DynamoDB
   - Handle streaming agent responses
   - Implement retry logic for agent invocation
+  - Update message status to PROCESSING and PROCESSED
 """
 
 import json
 import os
 
 import boto3
-from sb_shared import ObservabilityContext, lambda_handler, log_error, log_event
+from sb_shared import (
+    DynamoDBClient,
+    Message,
+    ObservabilityContext,
+    lambda_handler,
+    log_error,
+    log_event,
+)
 
 
 def invoke_bedrock_agent(user_id: str, message_content: str) -> dict:
@@ -103,6 +110,7 @@ def lambda_handler(event, _context):
             body = json.loads(sqs_record["body"])
             user_id = body["user_id"]
             message_id = body["message_id"]
+            timestamp = body["timestamp"]
 
             # Log operation with timing
             with ObservabilityContext(
@@ -112,17 +120,25 @@ def lambda_handler(event, _context):
                     "message_id": message_id,
                 },
             ):
-                # TODO: Get message from DynamoDB to retrieve raw_content
-                # message = db_client.get_item(...)
-                # For now, use message_id as placeholder
-                message_content = f"Message {message_id}"
+                # Get message from DynamoDB to retrieve raw_content
+                db_client = DynamoDBClient()
+                message = db_client.get_item(
+                    pk=user_id,
+                    sk=f"message#{timestamp}#{message_id}",
+                    model_class=Message,
+                )
+
+                if not message:
+                    raise ValueError(
+                        f"Message not found: user_id={user_id}, message_id={message_id}"
+                    )
 
                 # Invoke Bedrock agent
                 # Agent handles all business logic including:
                 # - Parsing user intent
                 # - Creating tasks, reminders, todos via tools
                 # - Any other domain-specific operations
-                invoke_bedrock_agent(user_id, message_content)
+                invoke_bedrock_agent(user_id, message.raw_content)
 
                 # Log agent invocation
                 log_event(
