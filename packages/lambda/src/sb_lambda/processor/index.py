@@ -123,7 +123,7 @@ def lambda_handler(event, _context):
                 # Get message from DynamoDB to retrieve raw_content
                 db_client = DynamoDBClient()
                 message = db_client.get_item(
-                    pk=user_id,
+                    pk=Message.pk_for(user_id=user_id),
                     sk=Message.sk_for(timestamp=timestamp, message_id=message_id),
                     model_class=Message,
                 )

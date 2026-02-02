@@ -73,6 +73,19 @@ class Message(BaseModel):
         return f"message#{self.timestamp}#{self.message_id}"
 
     @staticmethod
+    def pk_for(user_id: str) -> str:
+        """
+        Generate DynamoDB partition key for a message.
+
+        Args:
+            user_id: User ID
+
+        Returns:
+            Partition key (user_id)
+        """
+        return user_id
+
+    @staticmethod
     def sk_for(timestamp: str, message_id: str) -> str:
         """
         Generate DynamoDB sort key for a message.
