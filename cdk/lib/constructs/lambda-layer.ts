@@ -56,8 +56,12 @@ export class LambdaLayer extends Construct {
               '--python-platform x86_64-manylinux2014 ' +
               '--python 3.13 ' +
               './packages/shared ./packages/lambda',
-              // Remove .pth files that point to workspace editable installs
+              // Remove .pth files and dist-info that point to workspace editable installs
               'rm -f /asset-output/python/*.pth',
+              'rm -rf /asset-output/python/sb_shared-*.dist-info /asset-output/python/sb_lambda-*.dist-info',
+              // Copy workspace source code directly (workspace packages are not fully installed)
+              'cp -r /project/packages/shared/src/sb_shared /asset-output/python/',
+              'cp -r /project/packages/lambda/src/sb_lambda /asset-output/python/',
             ].join(' && '),
           ],
           user: 'root',
