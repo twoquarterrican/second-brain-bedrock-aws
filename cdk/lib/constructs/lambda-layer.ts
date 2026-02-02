@@ -46,9 +46,10 @@ export class LambdaLayer extends Construct {
               'mkdir -p /asset-output/python',
               // Install uv package manager
               'pip install uv',
-              // Install lambda package and all dependencies from pyproject.toml into the layer
-              // Run from project root so uv sees the workspace configuration
-              'cd /project && uv pip install --target /asset-output/python ./packages/lambda',
+              // Install workspace packages explicitly (shared must be installed before lambda)
+              'cd /project && uv pip install --target /asset-output/python ./packages/shared ./packages/lambda',
+              // Remove dist-info for workspace packages (keep only the source)
+              'rm -rf /asset-output/python/sb_shared-*.dist-info',
             ].join(' && '),
           ],
           user: 'root',

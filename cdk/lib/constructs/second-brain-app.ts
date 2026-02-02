@@ -3,12 +3,10 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import * as fs from 'node:fs';
-import * as dotenv from 'dotenv';
 import { LambdaLayer } from './lambda-layer';
 
 /**
@@ -40,10 +38,6 @@ export class SecondBrainApp extends Construct {
 
   constructor(scope: Construct, id: string, props: Props) {
     super(scope, id);
-
-    // Load environment variables from .env and .env.local
-    dotenv.config({ path: '.env' });
-    dotenv.config({ path: '.env.local', override: true });
 
     // Get Telegram secret token - required for webhook security
     const telegramSecretToken = process.env.TELEGRAM_SECRET_TOKEN;
