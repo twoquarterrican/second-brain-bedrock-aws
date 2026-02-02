@@ -42,16 +42,22 @@ export class LambdaLayer extends Construct {
             'bash',
             '-c',
             [
-              // Create the proper layer structure
+              // Create the proper layer structure for AWS Lambda
               'mkdir -p /asset-output/python',
               // Install uv package manager
               'pip install uv',
-              // Install packages - use --no-binary for workspace packages to force source installation
-              'cd /project && uv pip install --target /asset-output/python --no-binary :all: ./packages/shared ./packages/lambda',
-              // Remove any remaining .pth files (should not exist with --no-binary)
+              // Install dependencies using AWS Lambda best practices
+              // Using --target with Lambda-optimized flags
+              // See: https://docs.astral.sh/uv/guides/integration/aws-lambda/
+              'cd /project && uv pip install ' +
+              '--target /asset-output/python ' +
+              '--no-installer-metadata ' +
+              '--no-compile-bytecode ' +
+              '--python-platform x86_64-manylinux2014 ' +
+              '--python 3.13 ' +
+              './packages/shared ./packages/lambda',
+              // Remove .pth files that point to workspace editable installs
               'rm -f /asset-output/python/*.pth',
-              // Remove dist-info directories (redundant after --no-binary installs sources directly)
-              'rm -rf /asset-output/python/sb_shared-*.dist-info /asset-output/python/sb_lambda-*.dist-info',
             ].join(' && '),
           ],
           user: 'root',
