@@ -46,10 +46,15 @@ export class LambdaLayer extends Construct {
               'mkdir -p /asset-output/python',
               // Install uv package manager
               'pip install uv',
-              // Install workspace packages explicitly (shared must be installed before lambda)
-              'cd /project && uv pip install --target /asset-output/python ./packages/shared ./packages/lambda',
-              // Remove dist-info for workspace packages (keep only the source)
-              'rm -rf /asset-output/python/sb_shared-*.dist-info',
+              // Install lambda dependencies from project (with workspace resolution)
+              'cd /project && uv pip install --target /asset-output/python ./packages/lambda',
+              // Remove the .pth file that points to non-existent editable install
+              'rm -f /asset-output/python/sb_shared.pth',
+              // Copy workspace source code directly into the layer
+              'cp -r /project/packages/shared/src/sb_shared /asset-output/python/',
+              'cp -r /project/packages/lambda/src/sb_lambda /asset-output/python/',
+              // Remove dist-info directories for workspace packages (they\'re redundant with copied source)
+              'rm -rf /asset-output/python/sb_shared-*.dist-info /asset-output/python/sb_lambda-*.dist-info',
             ].join(' && '),
           ],
           user: 'root',
