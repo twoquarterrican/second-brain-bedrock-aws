@@ -173,6 +173,9 @@ export class SecondBrainApp extends Construct {
         TELEGRAM_SECRET_TOKEN: telegramSecretToken,
       },
       logGroup: messageHandlerLogGroup,
+      loggingConfig: {
+        logFormat: lambda.LogFormat.JSON,
+      },
     });
 
     // Grant permissions to message handler
@@ -232,6 +235,9 @@ export class SecondBrainApp extends Construct {
       layers: [lambdaLayer.layer],
       environment: processingEnv,
       logGroup: processingFunctionLogGroup,
+      loggingConfig: {
+        logFormat: lambda.LogFormat.JSON,
+      },
     });
 
     // Grant permissions to processing function
