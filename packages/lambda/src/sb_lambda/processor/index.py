@@ -23,7 +23,6 @@ TODO:
 
 import json
 import os
-import uuid
 
 import boto3
 from sb_shared import (
@@ -49,13 +48,14 @@ def invoke_bedrock_agent(user_id: str, message_content: str) -> None:
     The agent is responsible for logging and persisting all results via its tools.
 
     Args:
-        user_id: User ID (passed to agent as context)
+        user_id: User ID for session tracking
         message_content: Raw message text
 
     Note:
-        Each invocation generates a unique session ID (UUID4) as required by
-        Bedrock Agents Runtime (minimum 33 characters). User context is passed
-        via the message content.
+        Session ID is derived from user_id and padded to meet Bedrock's
+        minimum length requirement (33 characters). This ensures the same
+        user always has the same session ID, maintaining conversation context
+        across multiple message invocations.
 
     Raises:
         ValueError: If required environment variables are not set
@@ -76,9 +76,10 @@ def invoke_bedrock_agent(user_id: str, message_content: str) -> None:
 
     client = boto3.client("bedrock-agent-runtime")
 
-    # Generate session ID (minimum 33 characters required by Bedrock)
-    # UUID4 is always 36 characters: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-    session_id = str(uuid.uuid4())
+    # Generate session ID from user_id (minimum 33 characters required by Bedrock)
+    # Consistent per user for maintaining conversation context across messages
+    # Pad with dashes to meet minimum length requirement
+    session_id = f"session-user-{user_id}".ljust(33, "-")
 
     # Invoke agent - it handles logging and tool execution internally
     client.invoke_agent(
