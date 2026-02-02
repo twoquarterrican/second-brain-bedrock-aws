@@ -212,6 +212,9 @@ export class SecondBrainApp extends Construct {
             }
         );
 
+        // Environment variables for Bedrock Agent invocation
+        // BEDROCK_AGENT_ID: Runtime ARN from AgentCore construct
+        // BEDROCK_AGENT_ALIAS_ID: ASIS (As-Is) - routes to latest unpromoted agent version
         const processingEnv: { [key: string]: string } = {
             DYNAMODB_TABLE_NAME: this.dataTable.tableName,
             S3_BUCKET_NAME: this.dataBucket.bucketName,

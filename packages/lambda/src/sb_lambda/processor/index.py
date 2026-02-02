@@ -46,6 +46,11 @@ def invoke_bedrock_agent(user_id: str, message_content: str) -> dict:
     Raises:
         ValueError: If required environment variables are not set
         Exception: If agent invocation fails
+
+    Agent Alias (ASIS):
+        ASIS (As-Is) is the standard Bedrock Agents alias that automatically
+        routes to the latest unpromoted agent version. This allows the agent
+        to be updated without requiring code changes to update alias references.
     """
     agent_id = os.getenv("BEDROCK_AGENT_ID")
     agent_alias_id = os.getenv("BEDROCK_AGENT_ALIAS_ID")

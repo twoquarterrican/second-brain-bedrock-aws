@@ -178,8 +178,9 @@ export class AgentCore extends Construct {
         });
 
         // Export runtime ID and alias for use by other stacks
-        // The runtime name is used as the agent ID for invoke_agent API
-        // ASIS is the standard alias for as-is execution
+        // The runtime ARN is used as the agent ID for invoke_agent API
+        // ASIS (As-Is) is the Bedrock Agents standard alias for latest unpromoted version
+        // It routes to the most recent working version without requiring manual alias updates
         this.runtimeId = this.agentCoreRuntime.attrRuntimeArn;
         this.runtimeAlias = 'ASIS';
 
