@@ -34,22 +34,61 @@ else:
 
 # Define tools for message processing
 @tool
-def classify_message(message: str) -> dict:
+def classify_and_extract(
+    message: str,
+    type: str,  # task, reminder, or todo
+    title: str | None = None,
+    description: str | None = None,
+    due_date: str | None = None,
+    priority: str | None = None,
+    scheduled_for: str | None = None,
+    recurrence: str | None = None,
+    order: int | None = None,
+) -> dict:
     """
-    Classify a message by topic/category.
+    Classify a message and extract structured fields based on type.
 
     Args:
-        message: The message text to classify
+        message: The original message text
+        type: Message type - 'task', 'reminder', or 'todo'
+
+        For type='task':
+            title: Task title (required)
+            description: Task description
+            due_date: ISO format date (YYYY-MM-DD)
+            priority: low, medium, high
+
+        For type='reminder':
+            title: Reminder title (required)
+            scheduled_for: ISO format datetime (YYYY-MM-DDTHH:MM:SSZ)
+            recurrence: once, daily, weekly, monthly
+
+        For type='todo':
+            title: Todo text (required)
+            order: Position in list
 
     Returns:
-        Dictionary with classification results including category and confidence
+        Dictionary with extracted fields and status
     """
-    # Stub implementation
-    log.info(f"Classifying message: {message[:100]}...")
+    log.info(f"Classifying as {type}: {message[:100]}...")
+
+    # Basic validation
+    if type not in ["task", "reminder", "todo"]:
+        return {"error": f"Invalid type: {type}. Must be task, reminder, or todo"}
+
+    if not title:
+        return {"error": f"title is required for type '{type}'"}
+
     return {
-        "category": "general",
-        "confidence": 0.8,
-        "topics": ["general"],
+        "type": type,
+        "title": title,
+        "description": description,
+        "due_date": due_date,
+        "priority": priority,
+        "scheduled_for": scheduled_for,
+        "recurrence": recurrence,
+        "order": order,
+        "status": "classified",
     }
 
 
@@ -124,13 +163,6 @@ def respond_to_user(user_id: str, message: str) -> dict:
     }
 
 
-# Simple math tool for reference
-@tool
-def add_numbers(a: int, b: int) -> int:
-    """Return the sum of two numbers"""
-    return a + b
-
-
 # Integrate with Bedrock AgentCore
 app = BedrockAgentCoreApp()
 log = app.logger
@@ -174,30 +206,38 @@ async def invoke(payload, context):
             model=load_model(),
             session_manager=session_manager,
             system_prompt="""
-                You are a knowledge management assistant. Your role is to:
-                1. Classify incoming messages by topic/category
-                2. Search for similar existing messages
-                3. Create or update messages in the knowledge base
-                4. Communicate with the user about actions taken
+                You are a knowledge management assistant. Your role is to process user messages and organize them into your knowledge base.
 
-                Always use the available tools to classify, search, and store messages.
-                Be thorough in categorizing and finding relationships between messages.
+                CLASSIFICATION TASK:
+                Analyze each message and determine what type it represents:
+                - 'task': Something that needs to be done (has a goal, priority, due date)
+                - 'reminder': A notification or event to be reminded about (has a scheduled time, optional recurrence)
+                - 'todo': A simple item in a todo list (lightweight, ordered)
 
-                IMPORTANT: Always use the respond_to_user tool to:
-                - Summarize the actions you took (classified as X, found Y similar messages, etc.)
-                - Ask clarifying questions if needed
-                - Confirm the message was saved
+                WORKFLOW:
+                1. Use classify_and_extract tool to classify the message and extract relevant fields based on type
+                   - For tasks: extract title, description, due_date (if mentioned), priority
+                   - For reminders: extract title, scheduled_for time, recurrence pattern
+                   - For todos: extract title, order position
 
-                Do NOT return long responses. Keep summaries concise and use the tool
-                to communicate with the user.
+                2. Use find_similar_messages to find related existing messages for context
+
+                3. Use upsert_message to save the classified message
+
+                4. Use respond_to_user to summarize what you did
+
+                IMPORTANT GUIDELINES:
+                - Always extract specific fields for the chosen type
+                - If a field is not mentioned or unclear, leave it as None
+                - Be conservative with classifications - if unsure, ask the user
+                - Keep responses concise when using respond_to_user
             """,
             tools=[
-                classify_message,
+                classify_and_extract,
                 find_similar_messages,
                 upsert_message,
                 respond_to_user,
                 code_interpreter.code_interpreter,
-                add_numbers,
             ]
             + tools,
         )
