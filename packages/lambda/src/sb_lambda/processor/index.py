@@ -27,7 +27,7 @@ import os
 import uuid
 
 import boto3
-from second_brain_core import (
+from sb_shared import (
     DynamoDBClient,
     ObservabilityContext,
     Reminder,

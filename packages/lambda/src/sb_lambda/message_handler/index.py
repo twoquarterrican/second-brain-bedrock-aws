@@ -28,14 +28,7 @@ import uuid
 from datetime import datetime
 
 import boto3
-from second_brain_core import (
-    DynamoDBClient,
-    Message,
-    MessageStatus,
-    log_error,
-    log_event,
-    setup_logging,
-)
+from sb_shared import DynamoDBClient, Message, MessageStatus, log_error, log_event, setup_logging
 
 
 def verify_telegram_secret_token(headers: dict) -> bool:
