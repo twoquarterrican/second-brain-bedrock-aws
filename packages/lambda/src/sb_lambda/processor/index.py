@@ -142,10 +142,7 @@ def lambda_handler(event, _context):
                     )
 
                 # Invoke Bedrock agent with structured instructions
-                # Agent will use tools to:
-                # 1. Classify the message
-                # 2. Find similar existing messages
-                # 3. Update or create the message in the knowledge base
+                # Agent will use tools to process the message and respond to user
                 prompt = f"""Process this message from the user:
 
 Message ID: {message_id}
@@ -155,6 +152,15 @@ Please:
 1. Use the classify_message tool to classify this message by topic/category
 2. Use the find_similar_messages tool to search for related messages
 3. Use the upsert_message tool to save or update this message in the knowledge base
+4. Use the respond_to_user tool to summarize what you did and ask any follow-up questions
+
+After processing:
+- Classify the message
+- Find similar messages to provide context
+- Save/update the message
+- Respond to the user with a brief summary of actions taken
+
+Keep the user response concise and friendly. Ask follow-up questions only if needed.
 
 Preserve the message ID: {message_id}
 User ID: {user_id}"""

@@ -103,6 +103,27 @@ def upsert_message(message_id: str, user_id: str, content: str, category: str) -
     }
 
 
+@tool
+def respond_to_user(user_id: str, message: str) -> dict:
+    """
+    Send a response back to the user summarizing actions taken or asking for follow-up.
+
+    Args:
+        user_id: User ID to send response to
+        message: Response message for the user (summary, confirmation, or follow-up question)
+
+    Returns:
+        Dictionary with response delivery status
+    """
+    # Stub implementation - will queue message to Telegram/response channel
+    log.info(f"Responding to user {user_id}: {message[:100]}...")
+    return {
+        "user_id": user_id,
+        "message_sent": True,
+        "timestamp": "2025-02-01T00:00:00Z",
+    }
+
+
 # Simple math tool for reference
 @tool
 def add_numbers(a: int, b: int) -> int:
@@ -157,14 +178,24 @@ async def invoke(payload, context):
                 1. Classify incoming messages by topic/category
                 2. Search for similar existing messages
                 3. Create or update messages in the knowledge base
+                4. Communicate with the user about actions taken
 
                 Always use the available tools to classify, search, and store messages.
                 Be thorough in categorizing and finding relationships between messages.
+
+                IMPORTANT: Always use the respond_to_user tool to:
+                - Summarize the actions you took (classified as X, found Y similar messages, etc.)
+                - Ask clarifying questions if needed
+                - Confirm the message was saved
+
+                Do NOT return long responses. Keep summaries concise and use the tool
+                to communicate with the user.
             """,
             tools=[
                 classify_message,
                 find_similar_messages,
                 upsert_message,
+                respond_to_user,
                 code_interpreter.code_interpreter,
                 add_numbers,
             ]
