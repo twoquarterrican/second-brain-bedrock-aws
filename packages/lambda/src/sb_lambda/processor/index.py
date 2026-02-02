@@ -138,14 +138,15 @@ def lambda_handler(event, _context):
                 # - Parsing user intent
                 # - Creating tasks, reminders, todos via tools
                 # - Any other domain-specific operations
-                invoke_bedrock_agent(user_id, message.raw_content)
+                agent_response = invoke_bedrock_agent(user_id, message.raw_content)
 
-                # Log agent invocation
+                # Log agent response
                 log_event(
                     "agent_invoked",
                     {
                         "user_id": user_id,
                         "message_id": message_id,
+                        "agent_response": agent_response,
                     },
                 )
 
