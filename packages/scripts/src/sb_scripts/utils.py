@@ -1,6 +1,8 @@
 """Common utility functions for scripts."""
 
 import os
+from functools import lru_cache
+from pathlib import Path
 
 import boto3
 
@@ -33,3 +35,35 @@ def get_lambda_client():
 def get_environment() -> str:
     """Get deployment environment."""
     return os.getenv("ENVIRONMENT", "dev")
+
+
+@lru_cache(maxsize=1)
+def find_project_root(start_path: Path | None = None) -> Path:
+    """
+    Find the project root by walking up the directory tree looking for the workspace root.
+
+    The workspace root is identified by a pyproject.toml file containing [tool.uv.workspace].
+    Results are cached since the project root doesn't change during script execution.
+
+    Args:
+        start_path: Starting path to search from. Defaults to the current working directory.
+
+    Returns:
+        Path to the project root (workspace root directory).
+
+    Raises:
+        RuntimeError: If project root cannot be found.
+    """
+    if start_path is None:
+        start_path = Path.cwd()
+
+    current = start_path.resolve()
+    while current != current.parent:
+        pyproject = current / "pyproject.toml"
+        if pyproject.exists():
+            with open(pyproject) as f:
+                if "[tool.uv.workspace]" in f.read():
+                    return current
+        current = current.parent
+
+    raise RuntimeError(f"Could not find project root starting from {start_path}")

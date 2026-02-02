@@ -1,16 +1,62 @@
 default_agent: second_brain_agent
-is_agentcore_create_with_iac: true
 agents:
   second_brain_agent:
     name: second_brain_agent
+    language: python
+    node_version:
     entrypoint: /home/jt/GitHub/second-brain/second-brain-bedrock-aws/bedrock/temp/src/main.py
     deployment_type: container
+    runtime_type:
+    platform: linux/amd64
+    container_runtime:
     source_path: /home/jt/GitHub/second-brain/second-brain-bedrock-aws/bedrock/temp/src
     aws:
-      account:
-      region:
+      execution_role:
+      execution_role_auto_create: false
+      account: '777092321932'
+      region: us-west-2
+      ecr_repository:
+      ecr_auto_create: false
+      s3_path:
+      s3_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config:
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout:
+        max_lifetime:
     bedrock_agentcore:
-      agent_id:
-      agent_arn:
-      agent_session_id:
+      agent_id: second_brain_agent-nYSMag3QbP
+      agent_arn: arn:aws:bedrock-agentcore:us-west-2:777092321932:runtime/second_brain_agent-nYSMag3QbP
+      agent_session_id: fc25848a-2951-4b5e-9a4a-924e5ef21b59
+    codebuild:
+      project_name:
+      execution_role:
+      source_bucket:
+    memory:
+      mode: NO_MEMORY
+      memory_id:
+      memory_arn:
+      memory_name:
+      event_expiry_days: 30
+      first_invoke_memory_check_done: false
+      was_created_by_toolkit: false
+    identity:
+      credential_providers: []
+      workload:
+    aws_jwt:
+      enabled: false
+      audiences: []
+      signing_algorithm: ES384
+      issuer_url:
+      duration_seconds: 300
+    authorizer_configuration:
+    request_header_configuration:
+    oauth_configuration:
+    api_key_env_var_name:
+    api_key_credential_provider_name:
     is_generated_by_agentcore_create: true

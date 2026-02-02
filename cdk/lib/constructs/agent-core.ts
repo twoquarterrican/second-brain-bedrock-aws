@@ -155,7 +155,7 @@ export class AgentCore extends Construct {
             roleArn: runtimeRole.roleArn,
             environmentVariables: {
                 "AWS_REGION": region,
-                "MEMORY_ID": this.agentCoreMemory.attrMemoryId,
+                "BEDROCK_AGENTCORE_MEMORY_ID": this.agentCoreMemory.attrMemoryId,
             }
         });
     }

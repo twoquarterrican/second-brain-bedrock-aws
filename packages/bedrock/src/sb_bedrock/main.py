@@ -11,7 +11,6 @@ from bedrock_agentcore.memory.integrations.strands.session_manager import (
 from strands import Agent, tool
 from strands_tools.code_interpreter import AgentCoreCodeInterpreter
 
-from .mcp_client.client import get_streamable_http_mcp_client
 from .model.load import load_model
 
 MEMORY_ID = os.getenv("BEDROCK_AGENTCORE_MEMORY_ID")
@@ -24,8 +23,13 @@ if os.getenv("LOCAL_DEV") == "1":
 
     strands_mcp_client = nullcontext(SimpleNamespace(list_tools_sync=lambda: []))
 else:
-    # Import AgentCore Gateway as Streamable HTTP MCP Client
-    strands_mcp_client = get_streamable_http_mcp_client()
+    # Not ready for gateway mcp yet
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+
+    # todo: Import AgentCore Gateway as Streamable HTTP MCP Client
+    # todo: strands_mcp_client = get_streamable_http_mcp_client()
+    strands_mcp_client = nullcontext(SimpleNamespace(list_tools_sync=lambda: []))
 
 
 # Define a simple function tool

@@ -19,6 +19,7 @@ dependencies = [
 [project.scripts]
 deploy = "sb_scripts.deploy:main"
 setup-telegram = "sb_scripts.setup_telegram:main"
+agentcore-invoke = "sb_scripts.agentcore_invoke:main"
 
 [tool.uv.sources]
 sb-shared = { workspace = true }

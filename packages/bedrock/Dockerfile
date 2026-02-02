@@ -1,11 +1,16 @@
-# This should be run from project root e.g., $ docker build -f packages/bedrock/Dockerfile <project_root>
+# ---------------------------------------------------------------------------------------------
+# This is built in the CDK construct BedrockAgentDockerImage using a docker build context
+# containing project root pyproject.toml, packages/bedrock and packages/shared.
+# The root pyproject.toml coordinates the dependencies. The bedrock package is the source
+# code for the agentcore service. The shared package is bundled in with the agentcore service
+# as well.
+# ---------------------------------------------------------------------------------------------
 # Stage 1: Builder - Install dependencies with full workspace access
 FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim AS builder
 
 WORKDIR /build
 
-COPY pyproject.toml pyproject.toml
-COPY packages packages
+COPY . .
 
 ENV UV_SYSTEM_PYTHON=1 \
     UV_COMPILE_BYTECODE=1 \

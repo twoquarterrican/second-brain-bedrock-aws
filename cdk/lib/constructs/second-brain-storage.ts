@@ -67,7 +67,7 @@ export class SecondBrainStorage extends Construct {
      * Shared by all components of the system
      */
     this.dataBucket = new s3.Bucket(this, 'DataBucket', {
-      bucketName: 'second-brain-data',
+      bucketName: 'second-brain-data-twoquarterrican',
       versioned: true,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
