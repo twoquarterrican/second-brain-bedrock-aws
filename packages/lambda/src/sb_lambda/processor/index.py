@@ -124,7 +124,7 @@ def lambda_handler(event, _context):
                 db_client = DynamoDBClient()
                 message = db_client.get_item(
                     pk=user_id,
-                    sk=f"message#{timestamp}#{message_id}",
+                    sk=Message.sk_for(timestamp=timestamp, message_id=message_id),
                     model_class=Message,
                 )
 

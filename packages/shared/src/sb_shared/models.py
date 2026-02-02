@@ -72,6 +72,20 @@ class Message(BaseModel):
         """Generate DynamoDB sort key."""
         return f"message#{self.timestamp}#{self.message_id}"
 
+    @staticmethod
+    def sk_for(timestamp: str, message_id: str) -> str:
+        """
+        Generate DynamoDB sort key for a message.
+
+        Args:
+            timestamp: ISO timestamp from message creation
+            message_id: Unique message ID
+
+        Returns:
+            Sort key in format: message#{timestamp}#{message_id}
+        """
+        return f"message#{timestamp}#{message_id}"
+
     def to_dynamo(self) -> dict:
         """Convert to DynamoDB item format."""
         data = self.model_dump(exclude={"user_id"}, exclude_none=False)
