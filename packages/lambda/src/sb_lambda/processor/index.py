@@ -141,13 +141,25 @@ def lambda_handler(event, _context):
                         f"Message not found: user_id={user_id}, message_id={message_id}"
                     )
 
-                # Invoke Bedrock agent
-                # Agent handles all business logic including:
-                # - Parsing user intent
-                # - Creating tasks, reminders, todos via tools
-                # - Logging its activity
-                # - Any other domain-specific operations
-                invoke_bedrock_agent(user_id, message.raw_content)
+                # Invoke Bedrock agent with structured instructions
+                # Agent will use tools to:
+                # 1. Classify the message
+                # 2. Find similar existing messages
+                # 3. Update or create the message in the knowledge base
+                prompt = f"""Process this message from the user:
+
+Message ID: {message_id}
+Message: {message.raw_content}
+
+Please:
+1. Use the classify_message tool to classify this message by topic/category
+2. Use the find_similar_messages tool to search for related messages
+3. Use the upsert_message tool to save or update this message in the knowledge base
+
+Preserve the message ID: {message_id}
+User ID: {user_id}"""
+
+                invoke_bedrock_agent(user_id, prompt)
 
                 # Log agent invocation
                 log_event(

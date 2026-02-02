@@ -32,7 +32,78 @@ else:
     strands_mcp_client = nullcontext(SimpleNamespace(list_tools_sync=lambda: []))
 
 
-# Define a simple function tool
+# Define tools for message processing
+@tool
+def classify_message(message: str) -> dict:
+    """
+    Classify a message by topic/category.
+
+    Args:
+        message: The message text to classify
+
+    Returns:
+        Dictionary with classification results including category and confidence
+    """
+    # Stub implementation
+    log.info(f"Classifying message: {message[:100]}...")
+    return {
+        "category": "general",
+        "confidence": 0.8,
+        "topics": ["general"],
+    }
+
+
+@tool
+def find_similar_messages(message: str, user_id: str, limit: int = 5) -> list:
+    """
+    Find similar existing messages for the user.
+
+    Args:
+        message: The message to find similar matches for
+        user_id: User ID to search within
+        limit: Maximum number of results to return
+
+    Returns:
+        List of similar messages with similarity scores
+    """
+    # Stub implementation
+    log.info(f"Finding similar messages for user {user_id}")
+    return [
+        {
+            "message_id": "msg-123",
+            "content": "Similar message example",
+            "similarity_score": 0.85,
+            "timestamp": "2025-02-01T00:00:00Z",
+        }
+    ]
+
+
+@tool
+def upsert_message(message_id: str, user_id: str, content: str, category: str) -> dict:
+    """
+    Create or update a message in the knowledge base.
+
+    Args:
+        message_id: Unique message ID
+        user_id: User ID
+        content: Message content
+        category: Message category/classification
+
+    Returns:
+        Dictionary with operation result (created=True/False, message_id)
+    """
+    # Stub implementation
+    log.info(f"Upserting message {message_id} for user {user_id}")
+    return {
+        "message_id": message_id,
+        "user_id": user_id,
+        "created": True,
+        "category": category,
+        "timestamp": "2025-02-01T00:00:00Z",
+    }
+
+
+# Simple math tool for reference
 @tool
 def add_numbers(a: int, b: int) -> int:
     """Return the sum of two numbers"""
@@ -82,9 +153,22 @@ async def invoke(payload, context):
             model=load_model(),
             session_manager=session_manager,
             system_prompt="""
-                You are a helpful assistant with code execution capabilities. Use tools when appropriate.
+                You are a knowledge management assistant. Your role is to:
+                1. Classify incoming messages by topic/category
+                2. Search for similar existing messages
+                3. Create or update messages in the knowledge base
+
+                Always use the available tools to classify, search, and store messages.
+                Be thorough in categorizing and finding relationships between messages.
             """,
-            tools=[code_interpreter.code_interpreter, add_numbers] + tools,
+            tools=[
+                classify_message,
+                find_similar_messages,
+                upsert_message,
+                code_interpreter.code_interpreter,
+                add_numbers,
+            ]
+            + tools,
         )
 
         # Execute and format response
