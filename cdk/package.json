@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "aws-cdk-lib": "^2.236.0",
-    "constructs": "^10.4.5"
+    "constructs": "^10.4.5",
+    "dotenv": "^16.0.0"
   },
   "bin": {
     "second-brain-cdk": "lib/index.js"
