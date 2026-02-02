@@ -2,10 +2,56 @@ import * as cdk from 'aws-cdk-lib/core';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as fs from 'node:fs';
 import * as path from 'path';
+import * as crypto from 'node:crypto';
 import { Construct } from 'constructs';
 
 export interface Props {
   appName: string;
+}
+
+/**
+ * Compute a hash of all Python source files in lambda and shared packages.
+ * Used to invalidate the layer cache whenever code changes.
+ */
+function computeSourceHash(projectRoot: string): string {
+  const files: string[] = [];
+
+  // Collect all Python files from shared and lambda packages
+  const packagesToHash = ['packages/shared/src/sb_shared', 'packages/lambda/src/sb_lambda'];
+
+  for (const pkgPath of packagesToHash) {
+    const fullPath = path.join(projectRoot, pkgPath);
+    if (fs.existsSync(fullPath)) {
+      collectFiles(fullPath, files);
+    }
+  }
+
+  // Sort for consistent ordering
+  files.sort();
+
+  // Compute hash of all file contents
+  const hash = crypto.createHash('sha256');
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf8');
+    hash.update(content);
+  }
+
+  return hash.digest('hex').slice(0, 16);
+}
+
+/**
+ * Recursively collect all .py files from a directory.
+ */
+function collectFiles(dir: string, files: string[]): void {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      collectFiles(fullPath, files);
+    } else if (entry.name.endsWith('.py')) {
+      files.push(fullPath);
+    }
+  }
 }
 
 export class LambdaLayer extends Construct {
@@ -27,9 +73,13 @@ export class LambdaLayer extends Construct {
       throw new Error(`Lambda directory not found at ${lambdaDir}`);
     }
 
+    // Compute hash of all source files to invalidate cache on code changes
+    const sourceHash = computeSourceHash(projectRoot);
+
     // Create layer with bundling
     this.layer = new lambda.LayerVersion(this, `${props.appName}-Layer`, {
       code: lambda.Code.fromAsset(lambdaDir, {
+        assetHash: sourceHash,
         bundling: {
           image: lambda.Runtime.PYTHON_3_13.bundlingImage,
           volumes: [

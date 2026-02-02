@@ -143,6 +143,7 @@ export class AgentCore extends Construct {
                         'bedrock-agentcore:GetMemory',
                         'bedrock-agentcore:DeleteMemory',
                         'bedrock-agentcore:QueryMemory',
+                        'bedrock-agentcore:RetrieveMemoryRecords',
                     ],
                     resources: [
                         `arn:aws:bedrock-agentcore:${region}:${accountId}:memory/*`,
@@ -165,7 +166,8 @@ export class AgentCore extends Construct {
                     containerUri: props.imageUri
                 }
             },
-            agentRuntimeName: "second_brain_agent",
+            // Must be max 10 alphanumeric characters (no dashes, underscores, etc.)
+            agentRuntimeName: "sbrain",
             protocolConfiguration: "HTTP",
             networkConfiguration: {
                 networkMode: "PUBLIC"
@@ -177,11 +179,9 @@ export class AgentCore extends Construct {
             }
         });
 
-        // Export runtime ID and alias for use by other stacks
-        // The runtime ARN is used as the agent ID for invoke_agent API
-        // ASIS (As-Is) is the Bedrock Agents standard alias for latest unpromoted version
-        // It routes to the most recent working version without requiring manual alias updates
-        this.runtimeId = this.agentCoreRuntime.attrRuntimeArn;
+        // Export runtime ARN for use by other stacks
+        // The runtime ARN is used by bedrock-agentcore InvokeAgentRuntime API
+        this.runtimeId = this.agentCoreRuntime.attrAgentRuntimeArn;
         this.runtimeAlias = 'ASIS';
 
         new cdk.CfnOutput(this, 'RuntimeArn', {

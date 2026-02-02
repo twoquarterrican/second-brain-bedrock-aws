@@ -4,6 +4,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import {Construct} from 'constructs';
 import * as path from 'path';
 import * as fs from 'node:fs';
@@ -26,7 +27,6 @@ export interface Props {
     dataTable: dynamodb.Table;
     dataBucket: s3.Bucket;
     agentCoreRuntimeArn: string;
-    agentCoreAlias: string;
 }
 
 export class SecondBrainApp extends Construct {
@@ -212,15 +212,13 @@ export class SecondBrainApp extends Construct {
             }
         );
 
-        // Environment variables for Bedrock Agent invocation
-        // BEDROCK_AGENT_ID: Runtime ARN from AgentCore construct
-        // BEDROCK_AGENT_ALIAS_ID: ASIS (As-Is) - routes to latest unpromoted agent version
+        // Environment variables for Bedrock AgentCore invocation
+        // BEDROCK_AGENT_RUNTIME_ARN: ARN of the AgentCore runtime to invoke
         const processingEnv: { [key: string]: string } = {
             DYNAMODB_TABLE_NAME: this.dataTable.tableName,
             S3_BUCKET_NAME: this.dataBucket.bucketName,
             RESPONSE_QUEUE_URL: responseQueue.queueUrl,
-            BEDROCK_AGENT_ID: props.agentCoreRuntimeArn,
-            BEDROCK_AGENT_ALIAS_ID: props.agentCoreAlias,
+            BEDROCK_AGENT_RUNTIME_ARN: props.agentCoreRuntimeArn,
         };
 
         this.processingFunction = new lambda.Function(this, 'ProcessingFunction', {
@@ -242,7 +240,18 @@ export class SecondBrainApp extends Construct {
         this.messageQueue.grantConsumeMessages(this.processingFunction);
         responseQueue.grantSendMessages(this.processingFunction);
 
-        // TODO: Grant bedrock-agent-runtime invoke permissions
+        // Grant bedrock-agentcore invoke permissions
+        // Include runtime endpoint: arn:aws:bedrock-agentcore:region:account:runtime/name/runtime-endpoint/*
+        this.processingFunction.addToRolePolicy(
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                actions: ['bedrock-agentcore:InvokeAgentRuntime'],
+                resources: [
+                    props.agentCoreRuntimeArn,
+                    `${props.agentCoreRuntimeArn}/runtime-endpoint/*`,
+                ],
+            })
+        );
 
         // Wire SQS to Lambda
         const {SqsEventSource} = require('aws-cdk-lib/aws-lambda-event-sources');

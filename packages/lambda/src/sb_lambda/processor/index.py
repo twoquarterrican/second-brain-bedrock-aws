@@ -3,7 +3,7 @@ Processing Lambda - Async Message Processor
 
 Triggered by SQS messages, this Lambda:
 1. Gets message from DynamoDB
-2. Invokes Bedrock agent via Agents Runtime API
+2. Invokes Bedrock AgentCore runtime
 3. Logs agent response
 4. Queues response for delivery
 
@@ -12,8 +12,7 @@ reminders, todos, and other items via its tools.
 
 Environment Variables:
   - DYNAMODB_TABLE_NAME
-  - BEDROCK_AGENT_ID
-  - BEDROCK_AGENT_ALIAS_ID
+  - BEDROCK_AGENT_RUNTIME_ARN
   - AWS_REGION
 
 TODO:
@@ -37,7 +36,7 @@ from sb_shared import (
 
 def invoke_bedrock_agent(user_id: str, message_content: str) -> None:
     """
-    Invoke Bedrock agent via Agents Runtime API.
+    Invoke Bedrock AgentCore runtime.
 
     The agent processes the message and handles all business logic asynchronously:
     - Parses user intent
@@ -52,41 +51,40 @@ def invoke_bedrock_agent(user_id: str, message_content: str) -> None:
         message_content: Raw message text
 
     Note:
-        Session ID is derived from user_id and padded to meet Bedrock's
-        minimum length requirement (33 characters). This ensures the same
-        user always has the same session ID, maintaining conversation context
-        across multiple message invocations.
+        Uses bedrock-agentcore InvokeAgentRuntime API with the runtime ARN.
 
     Raises:
         ValueError: If required environment variables are not set
         Exception: If agent invocation fails
-
-    Agent Alias (ASIS):
-        ASIS (As-Is) is the standard Bedrock Agents alias that automatically
-        routes to the latest unpromoted agent version. This allows the agent
-        to be updated without requiring code changes to update alias references.
     """
-    agent_id = os.getenv("BEDROCK_AGENT_ID")
-    agent_alias_id = os.getenv("BEDROCK_AGENT_ALIAS_ID")
+    agent_runtime_arn = os.getenv("BEDROCK_AGENT_RUNTIME_ARN")
 
-    if not agent_id or not agent_alias_id:
-        raise ValueError(
-            "BEDROCK_AGENT_ID and BEDROCK_AGENT_ALIAS_ID environment variables must be set"
-        )
+    log_event(
+        "agent_invocation_debug",
+        {
+            "agent_runtime_arn": agent_runtime_arn,
+            "agent_runtime_arn_type": str(type(agent_runtime_arn)),
+        },
+    )
 
-    client = boto3.client("bedrock-agent-runtime")
+    if not agent_runtime_arn:
+        raise ValueError("BEDROCK_AGENT_RUNTIME_ARN environment variable must be set")
 
-    # Generate session ID from user_id (minimum 33 characters required by Bedrock)
-    # Consistent per user for maintaining conversation context across messages
-    # Pad with dashes to meet minimum length requirement
-    session_id = f"session-user-{user_id}".ljust(33, "-")
+    # Use bedrock-agentcore client (not bedrock-agent-runtime)
+    client = boto3.client("bedrock-agentcore")
 
-    # Invoke agent - it handles logging and tool execution internally
-    client.invoke_agent(
-        agentId=agent_id,
-        agentAliasId=agent_alias_id,
-        sessionId=session_id,
-        inputText=message_content,
+    # Prepare payload as JSON - must have "prompt" key for InvokeAgentRuntime API
+    payload = json.dumps(
+        {
+            "prompt": message_content,
+        }
+    ).encode("utf-8")
+
+    # Invoke agent runtime - it handles logging and tool execution internally
+    client.invoke_agent_runtime(
+        agentRuntimeArn=agent_runtime_arn,
+        contentType="application/json",
+        payload=payload,
     )
 
 

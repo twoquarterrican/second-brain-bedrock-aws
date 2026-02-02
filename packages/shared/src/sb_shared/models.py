@@ -130,6 +130,10 @@ class Message(BaseModel):
         timestamp = parts[1]
         message_id = parts[2]
 
+        # Remove from item dict to avoid duplicate keyword arguments
+        item.pop("timestamp", None)
+        item.pop("message_id", None)
+
         return cls(user_id=user_id, timestamp=timestamp, message_id=message_id, **item)
 
 
@@ -211,6 +215,9 @@ class Task(BaseModel):
 
         task_id = parts[1]
 
+        # Remove from item dict to avoid duplicate keyword arguments
+        item.pop("task_id", None)
+
         return cls(user_id=user_id, task_id=task_id, **item)
 
 
@@ -281,6 +288,9 @@ class Todo(BaseModel):
             raise ValueError(f"Invalid SK format: {sk}")
 
         todo_id = parts[1]
+
+        # Remove from item dict to avoid duplicate keyword arguments
+        item.pop("todo_id", None)
 
         return cls(user_id=user_id, todo_id=todo_id, **item)
 
@@ -365,5 +375,8 @@ class Reminder(BaseModel):
             raise ValueError(f"Invalid SK format: {sk}")
 
         reminder_id = parts[1]
+
+        # Remove from item dict to avoid duplicate keyword arguments
+        item.pop("reminder_id", None)
 
         return cls(user_id=user_id, reminder_id=reminder_id, **item)

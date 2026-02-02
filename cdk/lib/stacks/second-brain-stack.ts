@@ -26,7 +26,6 @@ export class SecondBrainStack extends cdk.Stack {
             dataTable: storageStack.dataTable,
             dataBucket: storageStack.dataBucket,
             agentCoreRuntimeArn: agentCore.runtimeId,
-            agentCoreAlias: agentCore.runtimeAlias,
         });
     }
 }
