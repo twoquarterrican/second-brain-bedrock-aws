@@ -130,6 +130,22 @@ export class AgentCore extends Construct {
                         `arn:aws:bedrock:${region}:${accountId}:*`,
                     ],
                 }),
+                new iam.PolicyStatement({
+                    sid: 'AgentCoreMemoryAccess',
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        'bedrock-agentcore:CreateEvent',
+                        'bedrock-agentcore:ListEvents',
+                        'bedrock-agentcore:SaveEvent',
+                        'bedrock-agentcore:PutMemory',
+                        'bedrock-agentcore:GetMemory',
+                        'bedrock-agentcore:DeleteMemory',
+                        'bedrock-agentcore:QueryMemory',
+                    ],
+                    resources: [
+                        `arn:aws:bedrock-agentcore:${region}:${accountId}:memory/*`,
+                    ],
+                }),
             ],
         });
 
