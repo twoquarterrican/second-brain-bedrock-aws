@@ -17,13 +17,13 @@ Environment Variables:
   - AWS_REGION
 
 TODO:
-  - Implement retry logic for agent invocation
   - Update message status to PROCESSING and PROCESSED
   - Handle agent tool execution results
 """
 
 import json
 import os
+import uuid
 
 import boto3
 from sb_shared import (
@@ -49,8 +49,13 @@ def invoke_bedrock_agent(user_id: str, message_content: str) -> None:
     The agent is responsible for logging and persisting all results via its tools.
 
     Args:
-        user_id: User ID for session tracking
+        user_id: User ID (passed to agent as context)
         message_content: Raw message text
+
+    Note:
+        Each invocation generates a unique session ID (UUID4) as required by
+        Bedrock Agents Runtime (minimum 33 characters). User context is passed
+        via the message content.
 
     Raises:
         ValueError: If required environment variables are not set
@@ -71,8 +76,9 @@ def invoke_bedrock_agent(user_id: str, message_content: str) -> None:
 
     client = boto3.client("bedrock-agent-runtime")
 
-    # Use user_id as session ID for consistent conversation context
-    session_id = user_id
+    # Generate session ID (minimum 33 characters required by Bedrock)
+    # UUID4 is always 36 characters: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    session_id = str(uuid.uuid4())
 
     # Invoke agent - it handles logging and tool execution internally
     client.invoke_agent(
