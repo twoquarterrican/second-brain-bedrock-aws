@@ -28,41 +28,22 @@ import json
 import logging
 from typing import Any, Callable, Dict, Literal, Optional
 
-# Initialize AWS Lambda logging
-try:
-    import aws_lambda_logging
-
-    HAS_LAMBDA_LOGGING = True
-except ImportError:
-    HAS_LAMBDA_LOGGING = False
-
-# Thread-local storage for AWS request ID
-import threading
-
-_request_id_storage = threading.local()
-
-
-def set_aws_request_id(request_id: str) -> None:
-    """Store the AWS request ID for use in all logs."""
-    _request_id_storage.request_id = request_id
-
-
-def get_aws_request_id() -> Optional[str]:
-    """Get the current AWS request ID."""
-    return getattr(_request_id_storage, "request_id", None)
+# AWS Lambda logging setup
+import aws_lambda_logging
 
 
 def setup_logging() -> None:
     """
     Set up AWS Lambda structured logging.
 
-    Call this at the start of your Lambda handler.
+    Call this at the start of your Lambda handler. AWS Lambda runtime
+    automatically injects requestId, timestamp, level, and logger fields
+    into JSON logs.
     """
-    if HAS_LAMBDA_LOGGING:
-        aws_lambda_logging.setup(
-            level="INFO",
-            boto_request_log_level="INFO",
-        )
+    aws_lambda_logging.setup(
+        level="INFO",
+        boto_request_log_level="INFO",
+    )
 
 
 def log_event(
@@ -89,7 +70,7 @@ def log_event(
 
     CloudWatch Logs Insights Query:
         ```
-        fields @timestamp, eventType, awsRequestId, user_id, task_id, category
+        fields @timestamp, eventType, requestId, user_id, task_id, category
         | filter eventType = "task_created"
         | stats count() by category
         ```
@@ -98,15 +79,11 @@ def log_event(
         details = {}
 
     # Create structured log entry
+    # AWS Lambda automatically injects: timestamp, level, logger, requestId
     log_entry = {
         "eventType": event_type,
         **details,
     }
-
-    # Include AWS request ID if available
-    request_id = get_aws_request_id()
-    if request_id:
-        log_entry["awsRequestId"] = request_id
 
     # Get logger and log with appropriate level
     logger = logging.getLogger()
@@ -232,9 +209,11 @@ def lambda_handler(
 
     The decorator:
     - Calls setup_logging()
-    - Extracts and stores AWS request ID from context
     - Logs the incoming event (with sensitive fields redacted)
     - Catches and logs exceptions
+
+    AWS Lambda automatically injects requestId, timestamp, level, and logger fields
+    into all JSON logs via the runtime's structured logging handler.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -242,9 +221,6 @@ def lambda_handler(
         def wrapper(event, context):
             # Setup logging
             setup_logging()
-
-            # Store AWS request ID for use in all logs
-            set_aws_request_id(context.aws_request_id)
 
             # Prepare event for logging (redact sensitive fields)
             event_to_log = _redact_event(event, kind)
@@ -264,13 +240,12 @@ def lambda_handler(
                 return result
 
             except Exception as e:
-                # Log error with AWS request ID
+                # Log error (requestId is auto-injected by AWS Lambda)
                 log_error(
                     f"handler_error_{kind}",
                     e,
                     {
                         "handlerKind": kind,
-                        "awsRequestId": context.aws_request_id,
                     },
                 )
                 raise
