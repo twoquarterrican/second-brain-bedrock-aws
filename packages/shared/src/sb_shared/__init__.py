@@ -17,7 +17,16 @@ from .constants import (
 )
 from .dynamodb import DynamoDBClient
 from .models import Message, Reminder, Task, Todo
-from .observability import ObservabilityContext, log_error, log_event, log_metrics, setup_logging
+from .observability import (
+    ObservabilityContext,
+    get_aws_request_id,
+    lambda_handler,
+    log_error,
+    log_event,
+    log_metrics,
+    set_aws_request_id,
+    setup_logging,
+)
 
 __version__ = "0.1.0"
 
@@ -42,4 +51,7 @@ __all__ = [
     "log_error",
     "log_metrics",
     "ObservabilityContext",
+    "lambda_handler",
+    "set_aws_request_id",
+    "get_aws_request_id",
 ]

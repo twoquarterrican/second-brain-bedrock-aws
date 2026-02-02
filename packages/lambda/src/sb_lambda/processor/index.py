@@ -35,9 +35,9 @@ from sb_shared import (
     Task,
     TaskStatus,
     Todo,
+    lambda_handler,
     log_error,
     log_event,
-    setup_logging,
 )
 
 
@@ -259,6 +259,7 @@ def queue_response_for_delivery(user_id: str, message_id: str, results: dict) ->
     )
 
 
+@lambda_handler(kind="sqs")
 def lambda_handler(event, context):
     """
     Process SQS messages with Bedrock agent and create tasks/reminders.
@@ -270,9 +271,6 @@ def lambda_handler(event, context):
     Returns:
         Processing status
     """
-    # Setup structured logging
-    setup_logging()
-
     db_client = DynamoDBClient()
 
     # Process each SQS message

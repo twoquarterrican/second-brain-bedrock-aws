@@ -5,7 +5,7 @@ in CloudWatch Logs Insights.
 
 Example:
     ```python
-    from second_brain_core import log_event
+    from sb_shared import log_event
 
     log_event('message_received', {
         'user_id': 'user123',
@@ -22,9 +22,11 @@ CloudWatch Logs Insights Query:
     ```
 """
 
+import copy
+import functools
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Literal, Optional
 
 # Initialize AWS Lambda logging
 try:
@@ -33,6 +35,21 @@ try:
     HAS_LAMBDA_LOGGING = True
 except ImportError:
     HAS_LAMBDA_LOGGING = False
+
+# Thread-local storage for AWS request ID
+import threading
+
+_request_id_storage = threading.local()
+
+
+def set_aws_request_id(request_id: str) -> None:
+    """Store the AWS request ID for use in all logs."""
+    _request_id_storage.request_id = request_id
+
+
+def get_aws_request_id() -> Optional[str]:
+    """Get the current AWS request ID."""
+    return getattr(_request_id_storage, "request_id", None)
 
 
 def setup_logging() -> None:
@@ -72,7 +89,7 @@ def log_event(
 
     CloudWatch Logs Insights Query:
         ```
-        fields @timestamp, eventType, user_id, task_id, category
+        fields @timestamp, eventType, awsRequestId, user_id, task_id, category
         | filter eventType = "task_created"
         | stats count() by category
         ```
@@ -85,6 +102,11 @@ def log_event(
         "eventType": event_type,
         **details,
     }
+
+    # Include AWS request ID if available
+    request_id = get_aws_request_id()
+    if request_id:
+        log_entry["awsRequestId"] = request_id
 
     # Get logger and log with appropriate level
     logger = logging.getLogger()
@@ -190,6 +212,124 @@ def log_metrics(
 
     logger = logging.getLogger()
     logger.info(json.dumps(log_entry))
+
+
+def lambda_handler(
+    kind: Literal["function_url", "sqs", "s3", "dynamodb"] = "function_url",
+) -> Callable:
+    """
+    Decorator for Lambda handlers that sets up logging and handles event redaction.
+
+    Args:
+        kind: Type of Lambda event ('function_url', 'sqs', 's3', 'dynamodb')
+
+    Example:
+        ```python
+        @lambda_handler(kind="function_url")
+        def handler(event, context):
+            return {"statusCode": 200}
+        ```
+
+    The decorator:
+    - Calls setup_logging()
+    - Extracts and stores AWS request ID from context
+    - Logs the incoming event (with sensitive fields redacted)
+    - Catches and logs exceptions
+    """
+
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(event, context):
+            # Setup logging
+            setup_logging()
+
+            # Store AWS request ID for use in all logs
+            set_aws_request_id(context.aws_request_id)
+
+            # Prepare event for logging (redact sensitive fields)
+            event_to_log = _redact_event(event, kind)
+
+            # Log incoming event
+            log_event(
+                f"handler_invoked_{kind}",
+                {
+                    "handlerKind": kind,
+                    "event": event_to_log,
+                },
+            )
+
+            try:
+                # Call the actual handler
+                result = func(event, context)
+                return result
+
+            except Exception as e:
+                # Log error with AWS request ID
+                log_error(
+                    f"handler_error_{kind}",
+                    e,
+                    {
+                        "handlerKind": kind,
+                        "awsRequestId": context.aws_request_id,
+                    },
+                )
+                raise
+
+        return wrapper
+
+    return decorator
+
+
+def _redact_event(event: Any, kind: str) -> Any:
+    """
+    Redact sensitive fields from Lambda event based on handler kind.
+
+    Args:
+        event: The Lambda event
+        kind: Type of Lambda event
+
+    Returns:
+        Event with sensitive fields redacted
+    """
+    # Make a deep copy to avoid modifying the original
+    redacted = copy.deepcopy(event)
+
+    if kind == "function_url":
+        # For Function URL events, redact headers that might contain auth tokens
+        if isinstance(redacted, dict) and "headers" in redacted:
+            headers_to_redact = [
+                "authorization",
+                "x-api-key",
+                "x-telegram-bot-api-secret-token",
+            ]
+            for header in headers_to_redact:
+                if header in redacted["headers"]:
+                    redacted["headers"][header] = "***REDACTED***"
+        # Redact body if it contains sensitive data (truncate for size)
+        if isinstance(redacted, dict) and "body" in redacted:
+            if isinstance(redacted["body"], str) and len(redacted["body"]) > 500:
+                redacted["body"] = redacted["body"][:500] + "...[truncated]"
+
+    elif kind == "sqs":
+        # For SQS, log the whole event for now (no redaction needed typically)
+        pass
+
+    elif kind == "s3":
+        # For S3, redact object content but keep metadata
+        if isinstance(redacted, dict) and "Records" in redacted:
+            for record in redacted.get("Records", []):
+                if "body" in record:
+                    record["body"] = "***REDACTED***"
+
+    elif kind == "dynamodb":
+        # For DynamoDB Streams, redact sensitive attributes
+        if isinstance(redacted, dict) and "Records" in redacted:
+            for record in redacted.get("Records", []):
+                if "dynamodb" in record and "NewImage" in record["dynamodb"]:
+                    # You could redact specific attributes here
+                    pass
+
+    return redacted
 
 
 class ObservabilityContext:

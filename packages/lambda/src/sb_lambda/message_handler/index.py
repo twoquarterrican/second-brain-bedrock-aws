@@ -28,7 +28,7 @@ import uuid
 from datetime import datetime
 
 import boto3
-from sb_shared import DynamoDBClient, Message, MessageStatus, log_error, log_event, setup_logging
+from sb_shared import DynamoDBClient, Message, MessageStatus, lambda_handler, log_error, log_event
 
 
 def verify_telegram_secret_token(headers: dict) -> bool:
@@ -118,6 +118,7 @@ def queue_message_for_processing(message_id: str, user_id: str) -> None:
     )
 
 
+@lambda_handler(kind="function_url")
 def lambda_handler(event, context):
     """
     Handle Telegram webhook POST request.
@@ -129,9 +130,6 @@ def lambda_handler(event, context):
     Returns:
         API Gateway Lambda proxy integration response
     """
-    # Setup structured logging
-    setup_logging()
-
     try:
         # Verify Telegram webhook signature (security: must match before processing)
         headers = event.get("headers", {})
