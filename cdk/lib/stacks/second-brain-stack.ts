@@ -16,7 +16,7 @@ export class SecondBrainStack extends cdk.Stack {
         const dockerImageStack = new BedrockAgentDockerImage(this, `DockerImage`, {
             appName,
         });
-        new AgentCore(this, `AgentCore`, {
+        const agentCore = new AgentCore(this, `AgentCore`, {
             appName,
             imageUri: dockerImageStack.imageUri,
         });
@@ -25,6 +25,8 @@ export class SecondBrainStack extends cdk.Stack {
         new SecondBrainApp(this, 'SecondBrainApp', {
             dataTable: storageStack.dataTable,
             dataBucket: storageStack.dataBucket,
+            agentCoreRuntimeArn: agentCore.runtimeId,
+            agentCoreAlias: agentCore.runtimeAlias,
         });
     }
 }

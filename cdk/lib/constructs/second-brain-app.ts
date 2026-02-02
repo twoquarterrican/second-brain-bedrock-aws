@@ -25,7 +25,8 @@ import {LambdaLayer} from './lambda-layer';
 export interface Props {
     dataTable: dynamodb.Table;
     dataBucket: s3.Bucket;
-    bedrockAgentFunction: lambda.IFunction;
+    agentCoreRuntimeArn: string;
+    agentCoreAlias: string;
 }
 
 export class SecondBrainApp extends Construct {
@@ -198,9 +199,8 @@ export class SecondBrainApp extends Construct {
          * Lambda: Processing Function
          * Triggered by SQS messages
          * - Gets message from DynamoDB
-         * - Invokes Bedrock agent
-         * - Creates tasks/reminders
-         * - Queues response
+         * - Invokes Bedrock agent via AgentCore Runtime
+         * - Agent handles creating tasks, reminders, etc. via tools
          */
         const processingFunctionLogGroup = new logs.LogGroup(
             this,
@@ -216,7 +216,8 @@ export class SecondBrainApp extends Construct {
             DYNAMODB_TABLE_NAME: this.dataTable.tableName,
             S3_BUCKET_NAME: this.dataBucket.bucketName,
             RESPONSE_QUEUE_URL: responseQueue.queueUrl,
-            BEDROCK_AGENT_FUNCTION_NAME: props.bedrockAgentFunction.functionName,
+            BEDROCK_AGENT_ID: props.agentCoreRuntimeArn,
+            BEDROCK_AGENT_ALIAS_ID: props.agentCoreAlias,
         };
 
         this.processingFunction = new lambda.Function(this, 'ProcessingFunction', {
@@ -238,8 +239,7 @@ export class SecondBrainApp extends Construct {
         this.messageQueue.grantConsumeMessages(this.processingFunction);
         responseQueue.grantSendMessages(this.processingFunction);
 
-        // Grant invoke permission to Bedrock agent Lambda
-        props.bedrockAgentFunction.grantInvoke(this.processingFunction);
+        // TODO: Grant bedrock-agent-runtime invoke permissions
 
         // Wire SQS to Lambda
         const {SqsEventSource} = require('aws-cdk-lib/aws-lambda-event-sources');

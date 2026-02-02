@@ -11,6 +11,8 @@ export interface Props {
 export class AgentCore extends Construct {
     readonly agentCoreRuntime: bedrockagentcore.CfnRuntime;
     readonly agentCoreMemory: bedrockagentcore.CfnMemory;
+    readonly runtimeId: string;
+    readonly runtimeAlias: string;
 
     constructor(scope: Construct, id: string, props: Props) {
         super(scope, id);
@@ -173,6 +175,18 @@ export class AgentCore extends Construct {
                 "AWS_REGION": region,
                 "BEDROCK_AGENTCORE_MEMORY_ID": this.agentCoreMemory.attrMemoryId,
             }
+        });
+
+        // Export runtime ID and alias for use by other stacks
+        // The runtime name is used as the agent ID for invoke_agent API
+        // ASIS is the standard alias for as-is execution
+        this.runtimeId = this.agentCoreRuntime.attrRuntimeArn;
+        this.runtimeAlias = 'ASIS';
+
+        new cdk.CfnOutput(this, 'RuntimeArn', {
+            value: this.runtimeId,
+            exportName: 'SecondBrainAgentCoreRuntimeArn',
+            description: 'ARN of the Bedrock AgentCore runtime',
         });
     }
 }
