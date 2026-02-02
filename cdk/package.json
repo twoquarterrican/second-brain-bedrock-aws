@@ -8,6 +8,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "cdk": "cdk",
     "cdk:synth": "cdk synth",
     "cdk:deploy": "cdk deploy",
@@ -18,6 +20,7 @@
     "@types/node": "^20.0.0",
     "aws-cdk-lib": "^2.236.0",
     "constructs": "^10.4.5",
+    "prettier": "^3.0.0",
     "typescript": "^5.3.3"
   },
   "dependencies": {
