@@ -18,7 +18,7 @@ dependencies = [
 
 [project.scripts]
 deploy = "sb_scripts.deploy:main"
-setup-telegram = "sb_scripts.setup_telegram:main"
+telegram = "sb_scripts.telegram:cli"
 agentcore-invoke = "sb_scripts.agentcore_invoke:main"
 
 [tool.uv.sources]

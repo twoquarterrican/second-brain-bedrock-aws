@@ -2,24 +2,26 @@
 Message Handler Lambda - Telegram Webhook Entry Point
 
 Receives Telegram messages and:
-1. Saves raw message to S3 (immutable)
-2. Saves metadata to DynamoDB
-3. Queues for async processing
-4. Returns 200 OK immediately
+1. Validates Telegram webhook signature (X-Telegram-Bot-Api-Secret-Token)
+2. Saves raw message to S3 (immutable)
+3. Saves metadata to DynamoDB
+4. Queues for async processing
+5. Returns 200 OK immediately
 
 Environment Variables:
   - DYNAMODB_TABLE_NAME
   - S3_BUCKET_NAME
   - MESSAGE_QUEUE_URL
+  - TELEGRAM_SECRET_TOKEN (required for webhook security)
   - AWS_REGION
 
 TODO:
-  - Validate Telegram bot token in request
   - Handle message edits and deletions
   - Support message attachments (photos, files)
   - Rate limiting per user
 """
 
+import hmac
 import json
 import os
 import uuid
@@ -34,6 +36,38 @@ from second_brain_core import (
     log_event,
     setup_logging,
 )
+
+
+def verify_telegram_secret_token(headers: dict) -> bool:
+    """
+    Verify the X-Telegram-Bot-Api-Secret-Token header.
+
+    Telegram includes this header in every webhook request. Must match the
+    secret token configured when setting the webhook.
+
+    Args:
+        headers: Request headers dict (case-insensitive keys)
+
+    Returns:
+        True if token is valid, False otherwise
+    """
+    secret_token = os.getenv("TELEGRAM_SECRET_TOKEN")
+    if not secret_token:
+        # If no secret token is configured, reject all requests (fail secure)
+        return False
+
+    # Get token from header (case-insensitive lookup)
+    token_from_header = None
+    for key, value in headers.items():
+        if key.lower() == "x-telegram-bot-api-secret-token":
+            token_from_header = value
+            break
+
+    if not token_from_header:
+        return False
+
+    # Use constant-time comparison to prevent timing attacks
+    return hmac.compare_digest(token_from_header, secret_token)
 
 
 def save_raw_event_to_s3(user_id: str, message_id: str, raw_message: dict) -> str:
@@ -106,6 +140,15 @@ def lambda_handler(event, context):
     setup_logging()
 
     try:
+        # Verify Telegram webhook signature (security: must match before processing)
+        headers = event.get("headers", {})
+        if not verify_telegram_secret_token(headers):
+            log_event("webhook_unauthorized", {"reason": "invalid_or_missing_token"})
+            return {
+                "statusCode": 403,
+                "body": json.dumps({"error": "Unauthorized"}),
+            }
+
         # Parse webhook payload
         body = json.loads(event.get("body", "{}"))
         telegram_message = body.get("message", {})

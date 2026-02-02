@@ -8,6 +8,7 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import * as fs from 'node:fs';
+import * as dotenv from 'dotenv';
 import { LambdaLayer } from './lambda-layer';
 
 /**
@@ -39,6 +40,19 @@ export class SecondBrainApp extends Construct {
 
   constructor(scope: Construct, id: string, props: Props) {
     super(scope, id);
+
+    // Load environment variables from .env and .env.local
+    dotenv.config({ path: '.env' });
+    dotenv.config({ path: '.env.local', override: true });
+
+    // Get Telegram secret token - required for webhook security
+    const telegramSecretToken = process.env.TELEGRAM_SECRET_TOKEN;
+    if (!telegramSecretToken) {
+      throw new Error(
+        'TELEGRAM_SECRET_TOKEN environment variable is not set. ' +
+        'Please add it to your .env or .env.local file (required for webhook security).'
+      );
+    }
 
     // Use shared storage from StorageStack
     this.dataTable = props.dataTable;
@@ -162,6 +176,7 @@ export class SecondBrainApp extends Construct {
         DYNAMODB_TABLE_NAME: this.dataTable.tableName,
         S3_BUCKET_NAME: this.dataBucket.bucketName,
         MESSAGE_QUEUE_URL: this.messageQueue.queueUrl,
+        TELEGRAM_SECRET_TOKEN: telegramSecretToken,
       },
       logGroup: messageHandlerLogGroup,
     });

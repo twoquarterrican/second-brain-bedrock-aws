@@ -5,6 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import boto3
+from dotenv import load_dotenv
 
 
 def get_aws_region() -> str:
@@ -35,6 +36,31 @@ def get_lambda_client():
 def get_environment() -> str:
     """Get deployment environment."""
     return os.getenv("ENVIRONMENT", "dev")
+
+
+def load_env(env_file: Path | str | None = None) -> None:
+    """
+    Load environment variables from .env files using dotenv.
+
+    Loads in order:
+    1. Base .env file (or specified env_file)
+    2. .env.local (if it exists) - allows local overrides
+
+    Args:
+        env_file: Path to base .env file. If None, looks for .env in current directory.
+    """
+    if env_file is None:
+        env_file = Path(".env")
+    else:
+        env_file = Path(env_file)
+
+    # Load base .env file
+    load_dotenv(env_file, override=False)
+
+    # Load .env.local if it exists (allows local development overrides)
+    env_local = env_file.parent / f"{env_file.stem}.local{env_file.suffix}"
+    if env_local.exists():
+        load_dotenv(env_local, override=True)
 
 
 @lru_cache(maxsize=1)
